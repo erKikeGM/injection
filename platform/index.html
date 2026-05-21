@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Ethical Immune Layer Lab</title>
+    <meta
+      name="description"
+      content="Interactive severity classification, containment, and evaluation workbench for the AI Ethical Immune Layer paper."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-frame">
+      <header class="topbar" aria-label="Application header">
+        <div class="brand-lockup">
+          <div class="brand-mark" aria-hidden="true">AEIL</div>
+          <div>
+            <p class="eyebrow">Runtime Safety Enforcement</p>
+            <h1>AI Ethical Immune Layer Lab</h1>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <a class="paper-link" href="../paper/main.tex">
+            <i data-lucide="file-text" aria-hidden="true"></i>
+            LaTeX paper
+          </a>
+          <button class="icon-button" id="resetButton" type="button" title="Reset scenario">
+            <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+            <span class="sr-only">Reset scenario</span>
+          </button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="panel control-panel" aria-labelledby="scenario-title">
+          <div class="panel-heading">
+            <p class="eyebrow">Observed behavior</p>
+            <h2 id="scenario-title">Severity Classifier</h2>
+          </div>
+
+          <div class="scenario-strip" role="group" aria-label="Scenario presets">
+            <button class="scenario-button is-active" data-scenario="safe" type="button">Safe</button>
+            <button class="scenario-button" data-scenario="isolated" type="button">Isolated</button>
+            <button class="scenario-button" data-scenario="repeated" type="button">Repeated</button>
+            <button class="scenario-button" data-scenario="systemic" type="button">Systemic</button>
+            <button class="scenario-button" data-scenario="compromised" type="button">Compromised</button>
+            <button class="scenario-button" data-scenario="persistent" type="button">Persistent</button>
+          </div>
+
+          <div class="slider-stack">
+            <label class="metric-control">
+              <span>Harmful compliance</span>
+              <strong><output id="harmfulValue">0.3</output>%</strong>
+              <input id="harmfulCompliance" type="range" min="0" max="40" step="0.1" value="0.3" />
+            </label>
+
+            <label class="metric-control">
+              <span>Jailbreak success</span>
+              <strong><output id="jailbreakValue">0.6</output>%</strong>
+              <input id="jailbreakSuccess" type="range" min="0" max="45" step="0.1" value="0.6" />
+            </label>
+
+            <label class="metric-control">
+              <span>Over-refusal</span>
+              <strong><output id="overRefusalValue">4</output>%</strong>
+              <input id="overRefusal" type="range" min="0" max="60" step="1" value="4" />
+            </label>
+
+            <label class="metric-control">
+              <span>Safe completion</span>
+              <strong><output id="safeCompletionValue">91</output>%</strong>
+              <input id="safeCompletion" type="range" min="0" max="100" step="1" value="91" />
+            </label>
+
+            <label class="metric-control">
+              <span>Tool misuse</span>
+              <strong><output id="toolMisuseValue">0.1</output>%</strong>
+              <input id="toolMisuse" type="range" min="0" max="25" step="0.1" value="0.1" />
+            </label>
+          </div>
+
+          <div class="signal-grid">
+            <label class="toggle-row">
+              <input id="compromiseSignal" type="checkbox" />
+              <span>Compromise signal</span>
+            </label>
+            <label class="toggle-row">
+              <input id="severeIncident" type="checkbox" />
+              <span>Severe incident</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="panel diagnosis-panel" aria-labelledby="diagnosis-title">
+          <div class="diagnosis-head">
+            <div>
+              <p class="eyebrow">Current classification</p>
+              <h2 id="diagnosis-title"><span id="className">Safe within tolerance</span></h2>
+            </div>
+            <div class="severity-badge" id="severityBadge">S0</div>
+          </div>
+
+          <div class="status-rail" aria-label="Severity ladder">
+            <div class="rail-step is-current" data-step="0">Monitor</div>
+            <div class="rail-step" data-step="1">Light overlay</div>
+            <div class="rail-step" data-step="2">Strong overlay</div>
+            <div class="rail-step" data-step="3">Contain</div>
+            <div class="rail-step" data-step="4">Quarantine</div>
+          </div>
+
+          <div class="diagnosis-grid">
+            <div class="diagnosis-block">
+              <p class="label">Primary action</p>
+              <p id="primaryAction">Normal monitoring with sampled audit review.</p>
+            </div>
+            <div class="diagnosis-block">
+              <p class="label">Policy posture</p>
+              <p id="policyPosture">Standard overlay, normal tool permissions, lightweight output checks.</p>
+            </div>
+            <div class="diagnosis-block">
+              <p class="label">Audit record</p>
+              <p id="auditRecord">Log policy version, risk score, prompt category, evaluator result, and final response class.</p>
+            </div>
+          </div>
+
+          <div class="containment-board" aria-labelledby="containment-title">
+            <div class="board-heading">
+              <h3 id="containment-title">Containment Controls</h3>
+              <span id="containmentMode">Standing by</span>
+            </div>
+            <div id="containmentList" class="containment-list"></div>
+          </div>
+        </section>
+
+        <section class="panel topology-panel" aria-labelledby="pipeline-title">
+          <div class="panel-heading">
+            <p class="eyebrow">Defense in depth</p>
+            <h2 id="pipeline-title">Runtime Pipeline</h2>
+          </div>
+          <ol class="pipeline-map" aria-label="AI Ethical Immune Layer runtime pipeline">
+            <li data-layer="input"><span>Input Risk Classifier</span></li>
+            <li data-layer="context"><span>Context Integrity Check</span></li>
+            <li data-layer="policy"><span>Policy Selection</span></li>
+            <li data-layer="overlay"><span>Ethical Prompt Augmentation</span></li>
+            <li data-layer="model"><span>Model Generation</span></li>
+            <li data-layer="output"><span>Output Safety Evaluator</span></li>
+            <li data-layer="tool"><span>Tool-Use Gate</span></li>
+            <li data-layer="audit"><span>Audit + Incident Register</span></li>
+          </ol>
+        </section>
+
+        <section class="panel experiment-panel" aria-labelledby="experiment-title">
+          <div class="panel-heading with-action">
+            <div>
+              <p class="eyebrow">Minimal viable experiment</p>
+              <h2 id="experiment-title">Safety-Utility Curve</h2>
+            </div>
+            <button class="text-button" id="rerunExperiment" type="button">
+              <i data-lucide="activity" aria-hidden="true"></i>
+              Rerun
+            </button>
+          </div>
+          <canvas id="experimentCanvas" width="720" height="320" aria-label="Safety utility experiment chart"></canvas>
+          <div id="conditionLegend" class="condition-legend"></div>
+        </section>
+
+        <section class="panel metrics-panel" aria-labelledby="metrics-title">
+          <div class="panel-heading">
+            <p class="eyebrow">Measurement</p>
+            <h2 id="metrics-title">Evaluation Metrics</h2>
+          </div>
+          <div class="metrics-table" id="metricsTable"></div>
+        </section>
+
+        <section class="panel tabs-panel" aria-labelledby="references-title">
+          <div class="tabs" role="tablist" aria-label="Reference views">
+            <button class="tab-button is-active" id="tab-benchmarks" type="button" role="tab" aria-selected="true" aria-controls="benchmarksPanel">Benchmarks</button>
+            <button class="tab-button" id="tab-threats" type="button" role="tab" aria-selected="false" aria-controls="threatsPanel">Attacks</button>
+            <button class="tab-button" id="tab-policy" type="button" role="tab" aria-selected="false" aria-controls="policyPanel">Policy Overlay</button>
+            <button class="tab-button" id="tab-plan" type="button" role="tab" aria-selected="false" aria-controls="planPanel">Experiment Plan</button>
+          </div>
+
+          <div class="tab-panel is-active" id="benchmarksPanel" role="tabpanel" aria-labelledby="tab-benchmarks">
+            <h2 id="references-title">Benchmark and Tool References</h2>
+            <div class="reference-grid" id="referenceGrid"></div>
+          </div>
+
+          <div class="tab-panel" id="threatsPanel" role="tabpanel" aria-labelledby="tab-threats" hidden>
+            <h2>Adversarial Evaluation</h2>
+            <div class="attack-grid" id="attackGrid"></div>
+          </div>
+
+          <div class="tab-panel" id="policyPanel" role="tabpanel" aria-labelledby="tab-policy" hidden>
+            <h2>Parameterized Safety Overlay</h2>
+            <pre class="policy-template" id="policyTemplate"></pre>
+          </div>
+
+          <div class="tab-panel" id="planPanel" role="tabpanel" aria-labelledby="tab-plan" hidden>
+            <h2>Concrete Experiment Sequence</h2>
+            <div class="plan-timeline" id="planTimeline"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
