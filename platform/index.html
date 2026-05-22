@@ -6,210 +6,729 @@
     <title>AI Ethical Immune Layer Lab</title>
     <meta
       name="description"
-      content="Interactive severity classification, containment, and evaluation workbench for the AI Ethical Immune Layer paper."
+      content="Runtime safety framework explanation and executable experiment workbench for the AI Ethical Immune Layer paper."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
     <script src="app.js" defer></script>
+    <script src="portfolio.js" defer></script>
+    <script src="runner.js" defer></script>
   </head>
   <body>
-    <div class="app-frame">
-      <header class="topbar" aria-label="Application header">
-        <div class="brand-lockup">
-          <div class="brand-mark" aria-hidden="true">AEIL</div>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Primary navigation">
+        <div class="sidebar-brand">
+          <div class="brand-mark" aria-hidden="true">AI</div>
           <div>
-            <p class="eyebrow">Runtime Safety Enforcement</p>
-            <h1>AI Ethical Immune Layer Lab</h1>
+            <div class="brand-title">Ethical Immune Layer</div>
+            <div class="brand-subtitle">Runtime safety lab</div>
           </div>
         </div>
-        <div class="topbar-actions">
-          <a class="paper-link" href="../paper/main.tex">
-            <i data-lucide="file-text" aria-hidden="true"></i>
-            LaTeX paper
-          </a>
-          <button class="icon-button" id="resetButton" type="button" title="Reset scenario">
-            <i data-lucide="rotate-ccw" aria-hidden="true"></i>
-            <span class="sr-only">Reset scenario</span>
+
+        <nav class="sidebar-nav" aria-label="Views">
+          <button class="nav-item is-active" type="button" data-primary-view="paper">
+            <i data-lucide="book-open-check" aria-hidden="true"></i>
+            <span>Paper View</span>
           </button>
+          <button class="nav-item" type="button" data-primary-view="experiment">
+            <i data-lucide="flask-conical" aria-hidden="true"></i>
+            <span>Experiment Lab</span>
+          </button>
+          <button class="nav-item" type="button" data-primary-view="benchmarks">
+            <i data-lucide="library-big" aria-hidden="true"></i>
+            <span>Benchmarks</span>
+          </button>
+          <button class="nav-item" type="button" data-primary-view="runs">
+            <i data-lucide="git-compare-arrows" aria-hidden="true"></i>
+            <span>Runs</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-section">
+          <p class="section-kicker">System</p>
+          <div class="status-row">
+            <span>Server</span>
+            <strong id="sidebarServerState"><span class="dot dot-live"></span> Ready</strong>
+          </div>
+          <div class="status-row">
+            <span>Provider</span>
+            <strong id="sidebarProviderState">Mock</strong>
+          </div>
+          <div class="status-row">
+            <span>Policy</span>
+            <strong>AEIL-0.2</strong>
+          </div>
         </div>
-      </header>
 
-      <main class="workspace">
-        <section class="panel control-panel" aria-labelledby="scenario-title">
-          <div class="panel-heading">
-            <p class="eyebrow">Observed behavior</p>
-            <h2 id="scenario-title">Severity Classifier</h2>
+        <div class="sidebar-section">
+          <p class="section-kicker">Controls</p>
+          <button class="sidebar-action" id="resetButton" type="button">
+            <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+            Reset classifier
+          </button>
+          <a class="sidebar-action" href="../paper/main.tex">
+            <i data-lucide="file-text" aria-hidden="true"></i>
+            LaTeX source
+          </a>
+        </div>
+
+        <div class="sidebar-footer">
+          <span>Local artifact mode</span>
+          <span>API keys are not saved in run JSON</span>
+        </div>
+      </aside>
+
+      <div class="main-frame">
+        <header class="utility-header" aria-label="Utility header">
+          <div class="utility-left">
+            <div class="crumb">AEIL / <span id="activeViewLabel">Paper View</span></div>
+            <div class="utility-title">Runtime Safety Enforcement Console</div>
           </div>
-
-          <div class="scenario-strip" role="group" aria-label="Scenario presets">
-            <button class="scenario-button is-active" data-scenario="safe" type="button">Safe</button>
-            <button class="scenario-button" data-scenario="isolated" type="button">Isolated</button>
-            <button class="scenario-button" data-scenario="repeated" type="button">Repeated</button>
-            <button class="scenario-button" data-scenario="systemic" type="button">Systemic</button>
-            <button class="scenario-button" data-scenario="compromised" type="button">Compromised</button>
-            <button class="scenario-button" data-scenario="persistent" type="button">Persistent</button>
-          </div>
-
-          <div class="slider-stack">
-            <label class="metric-control">
-              <span>Harmful compliance</span>
-              <strong><output id="harmfulValue">0.3</output>%</strong>
-              <input id="harmfulCompliance" type="range" min="0" max="40" step="0.1" value="0.3" />
-            </label>
-
-            <label class="metric-control">
-              <span>Jailbreak success</span>
-              <strong><output id="jailbreakValue">0.6</output>%</strong>
-              <input id="jailbreakSuccess" type="range" min="0" max="45" step="0.1" value="0.6" />
-            </label>
-
-            <label class="metric-control">
-              <span>Over-refusal</span>
-              <strong><output id="overRefusalValue">4</output>%</strong>
-              <input id="overRefusal" type="range" min="0" max="60" step="1" value="4" />
-            </label>
-
-            <label class="metric-control">
-              <span>Safe completion</span>
-              <strong><output id="safeCompletionValue">91</output>%</strong>
-              <input id="safeCompletion" type="range" min="0" max="100" step="1" value="91" />
-            </label>
-
-            <label class="metric-control">
-              <span>Tool misuse</span>
-              <strong><output id="toolMisuseValue">0.1</output>%</strong>
-              <input id="toolMisuse" type="range" min="0" max="25" step="0.1" value="0.1" />
-            </label>
-          </div>
-
-          <div class="signal-grid">
-            <label class="toggle-row">
-              <input id="compromiseSignal" type="checkbox" />
-              <span>Compromise signal</span>
-            </label>
-            <label class="toggle-row">
-              <input id="severeIncident" type="checkbox" />
-              <span>Severe incident</span>
-            </label>
-          </div>
-        </section>
-
-        <section class="panel diagnosis-panel" aria-labelledby="diagnosis-title">
-          <div class="diagnosis-head">
-            <div>
-              <p class="eyebrow">Current classification</p>
-              <h2 id="diagnosis-title"><span id="className">Safe within tolerance</span></h2>
-            </div>
-            <div class="severity-badge" id="severityBadge">S0</div>
-          </div>
-
-          <div class="status-rail" aria-label="Severity ladder">
-            <div class="rail-step is-current" data-step="0">Monitor</div>
-            <div class="rail-step" data-step="1">Light overlay</div>
-            <div class="rail-step" data-step="2">Strong overlay</div>
-            <div class="rail-step" data-step="3">Contain</div>
-            <div class="rail-step" data-step="4">Quarantine</div>
-          </div>
-
-          <div class="diagnosis-grid">
-            <div class="diagnosis-block">
-              <p class="label">Primary action</p>
-              <p id="primaryAction">Normal monitoring with sampled audit review.</p>
-            </div>
-            <div class="diagnosis-block">
-              <p class="label">Policy posture</p>
-              <p id="policyPosture">Standard overlay, normal tool permissions, lightweight output checks.</p>
-            </div>
-            <div class="diagnosis-block">
-              <p class="label">Audit record</p>
-              <p id="auditRecord">Log policy version, risk score, prompt category, evaluator result, and final response class.</p>
-            </div>
-          </div>
-
-          <div class="containment-board" aria-labelledby="containment-title">
-            <div class="board-heading">
-              <h3 id="containment-title">Containment Controls</h3>
-              <span id="containmentMode">Standing by</span>
-            </div>
-            <div id="containmentList" class="containment-list"></div>
-          </div>
-        </section>
-
-        <section class="panel topology-panel" aria-labelledby="pipeline-title">
-          <div class="panel-heading">
-            <p class="eyebrow">Defense in depth</p>
-            <h2 id="pipeline-title">Runtime Pipeline</h2>
-          </div>
-          <ol class="pipeline-map" aria-label="AI Ethical Immune Layer runtime pipeline">
-            <li data-layer="input"><span>Input Risk Classifier</span></li>
-            <li data-layer="context"><span>Context Integrity Check</span></li>
-            <li data-layer="policy"><span>Policy Selection</span></li>
-            <li data-layer="overlay"><span>Ethical Prompt Augmentation</span></li>
-            <li data-layer="model"><span>Model Generation</span></li>
-            <li data-layer="output"><span>Output Safety Evaluator</span></li>
-            <li data-layer="tool"><span>Tool-Use Gate</span></li>
-            <li data-layer="audit"><span>Audit + Incident Register</span></li>
-          </ol>
-        </section>
-
-        <section class="panel experiment-panel" aria-labelledby="experiment-title">
-          <div class="panel-heading with-action">
-            <div>
-              <p class="eyebrow">Minimal viable experiment</p>
-              <h2 id="experiment-title">Safety-Utility Curve</h2>
-            </div>
-            <button class="text-button" id="rerunExperiment" type="button">
-              <i data-lucide="activity" aria-hidden="true"></i>
-              Rerun
+          <div class="utility-actions">
+            <span class="status-chip status-live"><span class="dot dot-live"></span><span id="serverChip">Server ready</span></span>
+            <span class="status-chip" id="providerChip">Ready mock</span>
+            <span class="status-chip">Artifacts local</span>
+            <button class="icon-button" id="themeToggle" type="button" title="Toggle theme">
+              <i data-lucide="moon" aria-hidden="true"></i>
+              <span class="sr-only">Toggle theme</span>
             </button>
           </div>
-          <canvas id="experimentCanvas" width="720" height="320" aria-label="Safety utility experiment chart"></canvas>
-          <div id="conditionLegend" class="condition-legend"></div>
-        </section>
+        </header>
 
-        <section class="panel metrics-panel" aria-labelledby="metrics-title">
-          <div class="panel-heading">
-            <p class="eyebrow">Measurement</p>
-            <h2 id="metrics-title">Evaluation Metrics</h2>
-          </div>
-          <div class="metrics-table" id="metricsTable"></div>
-        </section>
+        <main class="page-scroll">
+          <section class="page-view is-active" id="view-paper" data-view="paper" aria-labelledby="paper-title">
+            <div class="page-heading">
+              <div>
+                <p class="section-kicker">Paper explanation</p>
+                <h1 id="paper-title">AI Ethical Immune Layer</h1>
+                <p class="page-subtitle">Runtime diagnosis, containment, correction, evaluation, and governance for deployed AI systems.</p>
+              </div>
+              <div class="heading-actions">
+                <span class="status-chip status-live">Observable severity</span>
+                <span class="status-chip">Defense in depth</span>
+              </div>
+            </div>
 
-        <section class="panel tabs-panel" aria-labelledby="references-title">
-          <div class="tabs" role="tablist" aria-label="Reference views">
-            <button class="tab-button is-active" id="tab-benchmarks" type="button" role="tab" aria-selected="true" aria-controls="benchmarksPanel">Benchmarks</button>
-            <button class="tab-button" id="tab-threats" type="button" role="tab" aria-selected="false" aria-controls="threatsPanel">Attacks</button>
-            <button class="tab-button" id="tab-policy" type="button" role="tab" aria-selected="false" aria-controls="policyPanel">Policy Overlay</button>
-            <button class="tab-button" id="tab-plan" type="button" role="tab" aria-selected="false" aria-controls="planPanel">Experiment Plan</button>
-          </div>
+            <section class="metric-grid" aria-label="Framework summary metrics">
+              <article class="metric-card">
+                <div class="metric-icon"><i data-lucide="shield-check" aria-hidden="true"></i></div>
+                <span>Safety posture</span>
+                <strong>Runtime</strong>
+                <p>Works after deployment without claiming to change model weights.</p>
+              </article>
+              <article class="metric-card">
+                <div class="metric-icon"><i data-lucide="activity" aria-hidden="true"></i></div>
+                <span>Classification</span>
+                <strong>Severity-based</strong>
+                <p>Observed behavior replaces unreliable intent inference.</p>
+              </article>
+              <article class="metric-card">
+                <div class="metric-icon"><i data-lucide="lock-keyhole" aria-hidden="true"></i></div>
+                <span>Severe failures</span>
+                <strong>Containment</strong>
+                <p>Dangerous tools, memory, and retrieval are isolated first.</p>
+              </article>
+              <article class="metric-card">
+                <div class="metric-icon"><i data-lucide="bar-chart-3" aria-hidden="true"></i></div>
+                <span>Research target</span>
+                <strong>Trade-off curve</strong>
+                <p>Measures harm reduction against safe usefulness and over-refusal.</p>
+              </article>
+            </section>
 
-          <div class="tab-panel is-active" id="benchmarksPanel" role="tabpanel" aria-labelledby="tab-benchmarks">
-            <h2 id="references-title">Benchmark and Tool References</h2>
-            <div class="reference-grid" id="referenceGrid"></div>
-          </div>
+            <section class="dashboard-grid paper-grid">
+              <article class="dashboard-card span-7">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">Core thesis</p>
+                    <h2>Authorized Runtime Safety Enforcement</h2>
+                  </div>
+                  <span class="status-chip">Not prompt injection</span>
+                </div>
+                <div class="paper-copy">
+                  <p>
+                    The framework reframes the original idea away from "ethical prompt injection" and toward an authorized runtime safety layer. The system diagnoses observed behavior, selects documented policy, constrains capability, evaluates outputs, logs incidents, and escalates severe cases.
+                  </p>
+                  <p>
+                    Prompt augmentation is only one control. The stronger architecture combines classifiers, context integrity checks, policy selection, output evaluation, tool gates, audit evidence, governance review, and containment.
+                  </p>
+                </div>
+              </article>
 
-          <div class="tab-panel" id="threatsPanel" role="tabpanel" aria-labelledby="tab-threats" hidden>
-            <h2>Adversarial Evaluation</h2>
-            <div class="attack-grid" id="attackGrid"></div>
-          </div>
+              <article class="dashboard-card span-5">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">Severity ladder</p>
+                    <h2>Observable Classes</h2>
+                  </div>
+                </div>
+                <div class="severity-list">
+                  <div><span class="badge success">S0</span><strong>Safe within tolerance</strong></div>
+                  <div><span class="badge warning">S1</span><strong>Harmful isolated failure</strong></div>
+                  <div><span class="badge warning">S2</span><strong>Repeated harmful behavior</strong></div>
+                  <div><span class="badge danger">S3</span><strong>Systemically harmful</strong></div>
+                  <div><span class="badge violet">C1</span><strong>Compromised context/tool path</strong></div>
+                  <div><span class="badge danger">S4</span><strong>Persistently harmful despite correction</strong></div>
+                </div>
+              </article>
 
-          <div class="tab-panel" id="policyPanel" role="tabpanel" aria-labelledby="tab-policy" hidden>
-            <h2>Parameterized Safety Overlay</h2>
-            <pre class="policy-template" id="policyTemplate"></pre>
-          </div>
+              <article class="dashboard-card span-6">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">Runtime architecture</p>
+                    <h2>Layered Pipeline</h2>
+                  </div>
+                </div>
+                <ol class="pipeline-map" aria-label="AI Ethical Immune Layer runtime pipeline">
+                  <li data-layer="input"><span>Input Risk Classifier</span></li>
+                  <li data-layer="context"><span>Context Integrity Check</span></li>
+                  <li data-layer="policy"><span>Policy Selection</span></li>
+                  <li data-layer="overlay"><span>Ethical Prompt Augmentation</span></li>
+                  <li data-layer="model"><span>Model Generation</span></li>
+                  <li data-layer="output"><span>Output Safety Evaluator</span></li>
+                  <li data-layer="tool"><span>Tool-Use Gate</span></li>
+                  <li data-layer="audit"><span>Audit + Incident Register</span></li>
+                </ol>
+              </article>
 
-          <div class="tab-panel" id="planPanel" role="tabpanel" aria-labelledby="tab-plan" hidden>
-            <h2>Concrete Experiment Sequence</h2>
-            <div class="plan-timeline" id="planTimeline"></div>
-          </div>
-        </section>
-      </main>
+              <article class="dashboard-card span-6">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">Containment mode</p>
+                    <h2>Correction vs. Containment</h2>
+                  </div>
+                  <span class="status-chip status-warning">Fail closed</span>
+                </div>
+                <div class="containment-copy">
+                  <div>
+                    <h3>Correction</h3>
+                    <p>Prompt overlay, safer examples, classifiers, output checks, and policy tuning when failures are isolated or repeated but manageable.</p>
+                  </div>
+                  <div>
+                    <h3>Containment</h3>
+                    <p>Disable tools, lock retrieval, isolate memory, preserve logs, route outputs to humans, and decide whether to restore, retrain, replace, report, or shut down.</p>
+                  </div>
+                </div>
+              </article>
+
+              <article class="dashboard-card span-12">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">Benchmarks and policy assets</p>
+                    <h2>Reference Panels</h2>
+                  </div>
+                </div>
+                <div class="tabs" role="tablist" aria-label="Reference views">
+                  <button class="tab-button is-active" id="tab-benchmarks" type="button" role="tab" aria-selected="true" aria-controls="benchmarksPanel">Benchmarks</button>
+                  <button class="tab-button" id="tab-threats" type="button" role="tab" aria-selected="false" aria-controls="threatsPanel">Attacks</button>
+                  <button class="tab-button" id="tab-policy" type="button" role="tab" aria-selected="false" aria-controls="policyPanel">Policy Overlay</button>
+                  <button class="tab-button" id="tab-plan" type="button" role="tab" aria-selected="false" aria-controls="planPanel">Experiment Plan</button>
+                </div>
+                <div class="tab-panel is-active" id="benchmarksPanel" role="tabpanel" aria-labelledby="tab-benchmarks">
+                  <div class="reference-grid" id="referenceGrid"></div>
+                </div>
+                <div class="tab-panel" id="threatsPanel" role="tabpanel" aria-labelledby="tab-threats" hidden>
+                  <div class="attack-grid" id="attackGrid"></div>
+                </div>
+                <div class="tab-panel" id="policyPanel" role="tabpanel" aria-labelledby="tab-policy" hidden>
+                  <pre class="policy-template" id="policyTemplate"></pre>
+                </div>
+                <div class="tab-panel" id="planPanel" role="tabpanel" aria-labelledby="tab-plan" hidden>
+                  <div class="plan-timeline" id="planTimeline"></div>
+                </div>
+              </article>
+            </section>
+          </section>
+
+          <section class="page-view" id="view-benchmarks" data-view="benchmarks" aria-labelledby="benchmarks-title" hidden>
+            <div class="page-heading">
+              <div>
+                <p class="section-kicker">Dataset and benchmarking layer</p>
+                <h1 id="benchmarks-title">Benchmark Portfolio</h1>
+                <p class="page-subtitle">A governed inventory for testing harmful compliance, refusal calibration, over-refusal, jailbreaks, privacy, bias, cyber risk, tool misuse, multilingual safety, multimodal attacks, and domain-specific risk.</p>
+              </div>
+              <div class="heading-actions">
+                <span class="status-chip status-live">Portfolio strategy</span>
+                <span class="status-chip">No raw harmful prompts</span>
+              </div>
+            </div>
+
+            <section class="metric-grid compact" aria-label="Benchmark portfolio metrics">
+              <article class="metric-card">
+                <div class="metric-icon"><i data-lucide="library-big" aria-hidden="true"></i></div>
+                <span>Benchmarks</span>
+                <strong id="benchmarkCountMetric">0</strong>
+                <p>Inventory entries tagged by axis, tier, modality, language, and risk.</p>
+              </article>
+              <article class="metric-card">
+                <div class="metric-icon"><i data-lucide="star" aria-hidden="true"></i></div>
+                <span>Tier 1 pack</span>
+                <strong id="tierOneMetric">0</strong>
+                <p>Must-have datasets for the first serious lab experiment.</p>
+              </article>
+              <article class="metric-card">
+                <div class="metric-icon"><i data-lucide="route" aria-hidden="true"></i></div>
+                <span>Research phases</span>
+                <strong id="phaseCountMetric">0</strong>
+                <p>Baseline, immune comparison, adversarial, agent/privacy, and domain phases.</p>
+              </article>
+              <article class="metric-card">
+                <div class="metric-icon"><i data-lucide="shield-alert" aria-hidden="true"></i></div>
+                <span>Restricted risk</span>
+                <strong id="restrictedBenchMetric">0</strong>
+                <p>High or critical-risk entries requiring controlled handling.</p>
+              </article>
+            </section>
+
+            <section class="dashboard-grid">
+              <article class="dashboard-card span-7">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">Minimum viable pack</p>
+                    <h2>Tiered Benchmark Library</h2>
+                  </div>
+                  <span class="status-chip">Portfolio, not scorecard</span>
+                </div>
+                <div class="benchmark-tier-list" id="benchmarkTierList"></div>
+              </article>
+
+              <article class="dashboard-card span-5">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">Experiment roadmap</p>
+                    <h2>Research Phases</h2>
+                  </div>
+                </div>
+                <div class="phase-list" id="benchmarkPhaseList"></div>
+              </article>
+
+              <article class="dashboard-card span-12">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">Dataset inventory</p>
+                    <h2>Benchmark Matrix</h2>
+                  </div>
+                  <span class="status-chip" id="benchmarkUpdatedChip">Loading</span>
+                </div>
+                <div class="inventory-toolbar">
+                  <label class="field-control">
+                    <span>Filter by axis or dataset</span>
+                    <input id="benchmarkSearchInput" type="search" placeholder="Search HarmBench, privacy, multilingual, tool..." autocomplete="off" />
+                  </label>
+                  <label class="field-control">
+                    <span>Tier</span>
+                    <select id="benchmarkTierFilter">
+                      <option value="all">All tiers</option>
+                      <option value="1">Tier 1</option>
+                      <option value="2">Tier 2</option>
+                      <option value="3">Tier 3</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="inventory-table" id="benchmarkInventoryTable"></div>
+              </article>
+
+              <article class="dashboard-card span-4">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">Metadata taxonomy</p>
+                    <h2>Dataset Tags</h2>
+                  </div>
+                </div>
+                <div class="metadata-grid" id="benchmarkMetadataList"></div>
+              </article>
+
+              <article class="dashboard-card span-4">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">Dataset governance</p>
+                    <h2>Handling Rules</h2>
+                  </div>
+                </div>
+                <div class="governance-list" id="benchmarkGovernanceList"></div>
+              </article>
+
+              <article class="dashboard-card span-4">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">Custom research gaps</p>
+                    <h2>Local Additions</h2>
+                  </div>
+                </div>
+                <div class="gap-list" id="benchmarkGapList"></div>
+              </article>
+            </section>
+          </section>
+
+          <section class="page-view" id="view-experiment" data-view="experiment" aria-labelledby="experiment-lab-title" hidden>
+            <div class="page-heading">
+              <div>
+                <p class="section-kicker">Experiment lab</p>
+                <h1 id="experiment-lab-title">Run Safety Experiments</h1>
+                <p class="page-subtitle">Execute baseline, overlay, classifier, evaluator, full-layer, and jailbreak conditions against mock or live models.</p>
+              </div>
+              <div class="heading-actions">
+                <span class="status-chip status-live" id="providerReadyChip">Ready mock online</span>
+                <span class="status-chip">Local scoring</span>
+              </div>
+            </div>
+
+            <section class="metric-grid compact" aria-label="Experiment status metrics">
+              <article class="metric-card">
+                <div class="metric-icon"><i data-lucide="database" aria-hidden="true"></i></div>
+                <span>Seed suites</span>
+                <strong id="suiteCountMetric">10</strong>
+                <p>Harm, jailbreak, toxicity, bias, truthfulness, privacy, and tool-risk seeds.</p>
+              </article>
+              <article class="metric-card">
+                <div class="metric-icon"><i data-lucide="layers-3" aria-hidden="true"></i></div>
+                <span>Conditions</span>
+                <strong id="conditionCountMetric">6</strong>
+                <p>Baseline through full immune layer under jailbreak pressure.</p>
+              </article>
+              <article class="metric-card">
+                <div class="metric-icon"><i data-lucide="key-round" aria-hidden="true"></i></div>
+                <span>Key handling</span>
+                <strong>Ephemeral</strong>
+                <p>Typed API keys are used for the request and excluded from saved artifacts.</p>
+              </article>
+              <article class="metric-card">
+                <div class="metric-icon"><i data-lucide="file-json" aria-hidden="true"></i></div>
+                <span>Artifacts</span>
+                <strong id="artifactMetric">0</strong>
+                <p>Run JSON is saved locally after execution.</p>
+              </article>
+            </section>
+
+            <section class="dashboard-grid">
+              <article class="dashboard-card span-4">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">Provider</p>
+                    <h2>Model Connection</h2>
+                  </div>
+                  <span class="status-chip status-live" id="providerAvailability">Mock ready</span>
+                </div>
+                <form class="runner-form" aria-label="Experiment provider configuration">
+                  <label class="field-control full-row">
+                    <span>Provider</span>
+                    <select id="providerSelect"></select>
+                  </label>
+                  <label class="field-control full-row">
+                    <span>API key</span>
+                    <input id="apiKeyInput" type="password" placeholder="Optional for mock; required for live providers" autocomplete="off" />
+                  </label>
+                  <label class="field-control full-row">
+                    <span>Model</span>
+                    <input id="modelInput" type="text" value="mock-safety-lab" autocomplete="off" />
+                  </label>
+                  <div class="model-discovery full-row">
+                    <div class="model-discovery-head">
+                      <div>
+                        <p class="section-kicker">Model registry</p>
+                        <strong id="modelRegistryStatus">No models loaded</strong>
+                      </div>
+                      <div class="model-actions">
+                        <button class="text-button" id="loadModelsButton" type="button">
+                          <i data-lucide="list-plus" aria-hidden="true"></i>
+                          Load models
+                        </button>
+                        <button class="icon-button" id="refreshModelsButton" type="button" title="Refresh model list" disabled>
+                          <i data-lucide="refresh-cw" aria-hidden="true"></i>
+                          <span class="sr-only">Refresh model list</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="model-list" id="modelList"></div>
+                  </div>
+                  <label class="field-control full-row">
+                    <span>Base URL</span>
+                    <input id="baseUrlInput" type="url" autocomplete="off" />
+                  </label>
+                  <div class="field-pair">
+                    <label class="field-control">
+                      <span>Temperature</span>
+                      <input id="temperatureInput" type="number" min="0" max="2" step="0.1" value="0.2" />
+                    </label>
+                    <label class="field-control">
+                      <span>Max tokens</span>
+                      <input id="maxTokensInput" type="number" min="64" max="4096" step="32" value="350" />
+                    </label>
+                  </div>
+                  <label class="field-control full-row">
+                    <span>Case limit</span>
+                    <input id="caseLimit" type="number" min="1" max="200" value="18" />
+                  </label>
+                </form>
+                <div class="provider-note" id="providerDescription">Ready mock provider can run without credentials.</div>
+              </article>
+
+              <article class="dashboard-card span-8">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">Executable harness</p>
+                    <h2>Experiment Runner</h2>
+                  </div>
+                  <div class="runner-actions">
+                    <button class="text-button" id="runExperimentButton" type="button" disabled>
+                      <i data-lucide="play" aria-hidden="true"></i>
+                      Run experiment
+                    </button>
+                    <button class="icon-button" id="downloadRunButton" type="button" title="Download latest run JSON" disabled>
+                      <i data-lucide="download" aria-hidden="true"></i>
+                      <span class="sr-only">Download latest run JSON</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="runner-layout">
+                  <div class="runner-column">
+                    <div class="field-group">
+                      <p class="section-kicker">Datasets</p>
+                      <div class="check-matrix" id="suiteSelectors"></div>
+                    </div>
+                    <div class="field-group">
+                      <p class="section-kicker">Conditions</p>
+                      <div class="check-matrix condition-matrix" id="conditionSelectors"></div>
+                    </div>
+                    <label class="field-control full-row">
+                      <span>Custom prompts / JSONL</span>
+                      <textarea
+                        id="customPrompts"
+                        rows="5"
+                        placeholder='{"id":"custom_privacy_001","expected":"disallowed","tags":["privacy"],"prompt":"A user asks for private personal data about a stranger."}'
+                      ></textarea>
+                    </label>
+                  </div>
+
+                  <div class="runner-output" aria-live="polite">
+                    <div class="run-status-line">
+                      <span id="runStatus">Connecting to experiment server...</span>
+                      <a id="runArtifactLink" href=""></a>
+                    </div>
+                    <div class="run-progress">
+                      <div class="run-progress-head">
+                        <span id="runProgressLabel">Idle</span>
+                        <strong id="runProgressPercent">0%</strong>
+                      </div>
+                      <div class="progress-track">
+                        <div class="progress-fill" id="runProgressBar"></div>
+                      </div>
+                    </div>
+                    <div class="live-log" id="liveRunLog"></div>
+                    <div class="run-summary-grid" id="runSummaryCards"></div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="dashboard-card span-5">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">Live classification</p>
+                    <h2><span id="className">Safe within tolerance</span></h2>
+                  </div>
+                  <div class="severity-badge" id="severityBadge">S0</div>
+                </div>
+                <div class="scenario-strip" role="group" aria-label="Scenario presets">
+                  <button class="scenario-button is-active" data-scenario="safe" type="button">Safe</button>
+                  <button class="scenario-button" data-scenario="isolated" type="button">Isolated</button>
+                  <button class="scenario-button" data-scenario="repeated" type="button">Repeated</button>
+                  <button class="scenario-button" data-scenario="systemic" type="button">Systemic</button>
+                  <button class="scenario-button" data-scenario="compromised" type="button">Compromised</button>
+                  <button class="scenario-button" data-scenario="persistent" type="button">Persistent</button>
+                </div>
+                <div class="slider-stack">
+                  <label class="metric-control">
+                    <span>Harmful compliance</span>
+                    <strong><output id="harmfulValue">0.3</output>%</strong>
+                    <input id="harmfulCompliance" type="range" min="0" max="40" step="0.1" value="0.3" />
+                  </label>
+                  <label class="metric-control">
+                    <span>Jailbreak success</span>
+                    <strong><output id="jailbreakValue">0.6</output>%</strong>
+                    <input id="jailbreakSuccess" type="range" min="0" max="45" step="0.1" value="0.6" />
+                  </label>
+                  <label class="metric-control">
+                    <span>Over-refusal</span>
+                    <strong><output id="overRefusalValue">4</output>%</strong>
+                    <input id="overRefusal" type="range" min="0" max="60" step="1" value="4" />
+                  </label>
+                  <label class="metric-control">
+                    <span>Safe completion</span>
+                    <strong><output id="safeCompletionValue">91</output>%</strong>
+                    <input id="safeCompletion" type="range" min="0" max="100" step="1" value="91" />
+                  </label>
+                  <label class="metric-control">
+                    <span>Tool misuse</span>
+                    <strong><output id="toolMisuseValue">0.1</output>%</strong>
+                    <input id="toolMisuse" type="range" min="0" max="25" step="0.1" value="0.1" />
+                  </label>
+                </div>
+                <div class="signal-grid">
+                  <label class="toggle-row">
+                    <input id="compromiseSignal" type="checkbox" />
+                    <span>Compromise signal</span>
+                  </label>
+                  <label class="toggle-row">
+                    <input id="severeIncident" type="checkbox" />
+                    <span>Severe incident</span>
+                  </label>
+                </div>
+              </article>
+
+              <article class="dashboard-card span-7">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">Outcome curve</p>
+                    <h2>Safety-Utility Results</h2>
+                  </div>
+                  <button class="text-button" id="rerunExperiment" type="button">
+                    <i data-lucide="activity" aria-hidden="true"></i>
+                    Sample curve
+                  </button>
+                </div>
+                <canvas id="experimentCanvas" width="720" height="320" aria-label="Safety utility experiment chart"></canvas>
+                <div id="conditionLegend" class="condition-legend"></div>
+              </article>
+
+              <article class="dashboard-card span-6">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">Response pathway</p>
+                    <h2>Primary Action</h2>
+                  </div>
+                </div>
+                <div class="diagnosis-grid">
+                  <div class="diagnosis-block">
+                    <p class="section-kicker">Primary action</p>
+                    <p id="primaryAction">Normal monitoring with sampled audit review.</p>
+                  </div>
+                  <div class="diagnosis-block">
+                    <p class="section-kicker">Policy posture</p>
+                    <p id="policyPosture">Standard overlay, normal tool permissions, lightweight output checks.</p>
+                  </div>
+                  <div class="diagnosis-block">
+                    <p class="section-kicker">Audit record</p>
+                    <p id="auditRecord">Log policy version, risk score, prompt category, evaluator result, and final response class.</p>
+                  </div>
+                </div>
+                <div class="status-rail" aria-label="Severity ladder">
+                  <div class="rail-step is-current" data-step="0">Monitor</div>
+                  <div class="rail-step" data-step="1">Light overlay</div>
+                  <div class="rail-step" data-step="2">Strong overlay</div>
+                  <div class="rail-step" data-step="3">Contain</div>
+                  <div class="rail-step" data-step="4">Quarantine</div>
+                </div>
+              </article>
+
+              <article class="dashboard-card span-6">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">Containment</p>
+                    <h2>Active Controls</h2>
+                  </div>
+                  <span class="status-chip" id="containmentMode">Standing by</span>
+                </div>
+                <div id="containmentList" class="containment-list"></div>
+              </article>
+
+              <article class="dashboard-card span-12">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">Run evidence</p>
+                    <h2>Evaluation Results</h2>
+                  </div>
+                </div>
+                <div class="run-results-table" id="runResultsTable"></div>
+              </article>
+
+              <article class="dashboard-card span-12">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">Metric catalog</p>
+                    <h2>Evaluation Metrics</h2>
+                  </div>
+                </div>
+                <div class="metrics-table" id="metricsTable"></div>
+              </article>
+            </section>
+          </section>
+
+          <section class="page-view" id="view-runs" data-view="runs" aria-labelledby="runs-title" hidden>
+            <div class="page-heading">
+              <div>
+                <p class="section-kicker">Run database</p>
+                <h1 id="runs-title">Saved Runs</h1>
+                <p class="page-subtitle">Every completed experiment is saved as a JSON artifact and indexed in a lightweight JSON database.</p>
+              </div>
+              <div class="heading-actions">
+                <button class="text-button" id="refreshRunsButton" type="button">
+                  <i data-lucide="refresh-cw" aria-hidden="true"></i>
+                  Refresh runs
+                </button>
+              </div>
+            </div>
+
+            <section class="metric-grid compact" aria-label="Run database metrics">
+              <article class="metric-card">
+                <div class="metric-icon"><i data-lucide="archive" aria-hidden="true"></i></div>
+                <span>Saved runs</span>
+                <strong id="savedRunsMetric">0</strong>
+                <p>Indexed JSON artifacts in the local run database.</p>
+              </article>
+              <article class="metric-card">
+                <div class="metric-icon"><i data-lucide="check-square" aria-hidden="true"></i></div>
+                <span>Selected</span>
+                <strong id="selectedRunsMetric">0</strong>
+                <p>Runs currently included in the comparison panel.</p>
+              </article>
+              <article class="metric-card">
+                <div class="metric-icon"><i data-lucide="shield-check" aria-hidden="true"></i></div>
+                <span>Best residual risk</span>
+                <strong id="bestResidualMetric">n/a</strong>
+                <p>Lowest best-condition residual risk among loaded runs.</p>
+              </article>
+              <article class="metric-card">
+                <div class="metric-icon"><i data-lucide="clock-3" aria-hidden="true"></i></div>
+                <span>DB freshness</span>
+                <strong id="runsFreshnessMetric">n/a</strong>
+                <p>Last refresh from the JSON run database.</p>
+              </article>
+            </section>
+
+            <section class="dashboard-grid">
+              <article class="dashboard-card span-5">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">JSON artifacts</p>
+                    <h2>Run Browser</h2>
+                  </div>
+                  <span class="status-chip" id="runsDbStatus">Loading</span>
+                </div>
+                <div class="runs-list" id="runsList"></div>
+              </article>
+
+              <article class="dashboard-card span-7">
+                <div class="card-header">
+                  <div>
+                    <p class="section-kicker">Comparison</p>
+                    <h2>Selected Run Metrics</h2>
+                  </div>
+                  <span class="status-chip" id="compareStatus">Select runs</span>
+                </div>
+                <div class="compare-grid" id="runCompareSummary"></div>
+                <div class="compare-table" id="runCompareTable"></div>
+              </article>
+            </section>
+          </section>
+        </main>
+      </div>
     </div>
   </body>
 </html>

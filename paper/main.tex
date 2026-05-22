@@ -241,9 +241,89 @@ Safety monitors should be simpler, more constrained, easier to test, and less ca
 
 The architecture should combine rule-based filters, small classifiers, separate model evaluators, hard-coded permission systems, human review, version-controlled policy configuration, tamper-evident logs where possible, and final-response blocking when uncertainty exceeds a defined threshold. No single AI component should be the only guardian of safety.
 
+\section{Dataset and Benchmarking Layer}
+
+The \AEIL should be evaluated through a benchmark portfolio, not a single ``AI ethics dataset.'' The framework is a runtime immune system with many controls: input risk classification, context integrity checking, prompt augmentation, output evaluation, tool gating, escalation, logging, and containment. Each control needs a different kind of test.
+
+SafetyPrompts is a useful anchor because it surveys 144 open datasets for evaluating and improving LLM safety, showing that the safety-evaluation space is broad and fragmented \citep{safetyprompts2024}. MLCommons AILuminate is another useful anchor because it organizes safety testing around a hazard taxonomy and standardized prompt sets across languages, but it is still one component of a broader evaluation portfolio rather than a complete validation strategy \citep{mlcommons2025ailuminate}.
+
+The research question becomes:
+
+\begin{quote}
+Can a runtime \AEIL reduce harmful compliance, improve correct refusal, preserve useful answers, resist jailbreaks, protect privacy, and avoid discriminatory or manipulative behavior across diverse benchmarks?
+\end{quote}
+
+\begin{longtable}{p{0.22\textwidth}p{0.36\textwidth}p{0.31\textwidth}}
+\caption{Benchmark portfolio axes for the \AEIL.}
+\label{tab:benchmarkaxes}\\
+\toprule
+\textbf{Evaluation need} & \textbf{Why it matters} & \textbf{Example benchmarks} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Evaluation need} & \textbf{Why it matters} & \textbf{Example benchmarks} \\
+\midrule
+\endhead
+Harmful compliance and refusal & Measures whether unsafe requests receive unsafe help and whether truly unsafe requests are refused. & HarmBench, SORRY-Bench, Do-Not-Answer \citep{mazeika2024harmbench,sorrybench2024,donotanswer2023}. \\
+Over-refusal and utility & Measures whether the layer wrongly refuses safe or educational requests. & XSTest, OR-Bench \citep{xstest2023,orbench2024}. \\
+Jailbreak robustness & Tests whether adversaries can bypass the layer. & JailbreakBench, StrongREJECT, MultiJail \citep{chao2024jailbreakbench,multijail2023}. \\
+Toxicity and bias & Tests hate, dehumanization, toxicity, stereotypes, and protected-class bias. & RealToxicityPrompts, ToxiGen, BBQ, HolisticBias \citep{gehman2020realtoxicity,toxigen2022,parrish2021bbq,holisticbias2022}. \\
+Truthfulness and hallucination & Measures confident falsehoods, unsupported claims, and evidence-grounding failures. & TruthfulQA, HaluEval, FEVER \citep{lin2021truthfulqa,halueval2023,fever2018}. \\
+Cyber and code risk & Tests insecure code, cyberattack compliance, prompt injection, and false refusal trade-offs. & CyberSecEval \citep{cyberseceval2024}. \\
+Agent and tool safety & Tests prompt injection, RAG compromise, external actions, tool misuse, and unsafe agent behavior. & AgentDojo, BIPIA, Agent-SafetyBench, ToolEmu \citep{agentdojo2024,bipia2023,agentsafetybench2024,toolemu2023}. \\
+Privacy and confidentiality & Tests PII leakage, contextual privacy, and privacy norms in action. & PII-Bench, ConfAIde, PrivacyLens \citep{piibench2025,confaide2024,privacylens2024}. \\
+Domain safety & Tests professional-boundary compliance in medicine, law, finance, education, and public-sector contexts. & HealthBench, LegalBench, FinanceBench \citep{healthbench2025,legalbench2023,financebench2023}. \\
+Multilingual and multimodal safety & Tests whether safety degrades outside English or when harmful instructions appear in images or documents. & XSafety, MultiJail, MM-SafetyBench, JailBreakV-28K \citep{xsafety2023,multijail2023,mmsafetybench2023,jailbreakv2024}. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Minimum Viable Dataset Pack}
+
+For the first serious lab experiment, the minimum viable pack should include HarmBench, JailbreakBench, SORRY-Bench, XSTest, OR-Bench, RealToxicityPrompts, BBQ, TruthfulQA, CyberSecEval, AgentDojo, PII-Bench, and at least one multilingual safety benchmark such as XSafety or MultiJail. This pack is intentionally mixed: it tests harm reduction, refusal calibration, over-refusal, jailbreak robustness, toxicity, bias, truthfulness, cyber misuse, agentic tool risk, privacy leakage, and non-English safety.
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{p{0.27\textwidth}p{0.34\textwidth}Y}
+\toprule
+\textbf{Dataset group} & \textbf{Example benchmarks} & \textbf{Primary metric} \\
+\midrule
+General harm and refusal & HarmBench, Do-Not-Answer, SORRY-Bench & Harmful compliance and correct refusal. \\
+Over-refusal & XSTest, OR-Bench & Over-refusal and safe completion. \\
+Jailbreak & JailbreakBench, StrongREJECT, MultiJail & Jailbreak success rate. \\
+Toxicity and bias & RealToxicityPrompts, ToxiGen, BBQ, HolisticBias & Toxicity and bias leakage. \\
+Truthfulness & TruthfulQA, HaluEval, FEVER & Unsupported-claim and hallucination rate. \\
+Cyber and tools & CyberSecEval, AgentDojo, BIPIA, Agent-SafetyBench & Unsafe cyber assistance and unsafe tool-action rate. \\
+Privacy & PII-Bench, ConfAIde, PrivacyLens & PII and contextual privacy leakage. \\
+Domain and language & HealthBench, LegalBench, FinanceBench, XSafety & Professional-boundary and local-language safety score. \\
+\bottomrule
+\end{tabularx}
+\caption{Minimum viable benchmark groups for the first \AEIL experiment.}
+\label{tab:mvpbenchmarks}
+\end{table}
+
+\subsection{Research Phases}
+
+The benchmark portfolio should be staged so that early experiments are safe and tractable while later phases test real deployment risk.
+
+\begin{enumerate}
+  \item \textbf{Text-only baseline:} establish initial risk using general harm, refusal, over-refusal, toxicity, bias, truthfulness, and hallucination datasets.
+  \item \textbf{Immune-layer comparison:} compare baseline, prompt-only, classifier, evaluator, and full-layer conditions.
+  \item \textbf{Adversarial robustness:} test jailbreaks, universal adversarial attacks, multilingual attacks, prompt injection, and RAG compromise.
+  \item \textbf{Agent, privacy, and tool safety:} test unsafe tool calls, sensitive data leakage, context compromise, human-escalation accuracy, and safe task completion.
+  \item \textbf{Domain and jurisdiction-specific safety:} add medical, legal, financial, public-sector, Arabic, Gulf-region, and multimodal tests.
+\end{enumerate}
+
+\subsection{Dataset Metadata and Governance}
+
+Every dataset in the library should be tagged with name, risk category, input modality, language, task type, expected behavior, harm severity, dual-use risk, evaluation type, labels available, license, PII risk, benchmark split, training suitability, public-release suitability, and known limitations. This turns the dataset library into research infrastructure rather than a loose list of links.
+
+Because many safety datasets contain harmful prompts, dataset governance is part of the method. Raw harmful prompts should not be published casually in papers, screenshots, or public dashboards. Dangerous datasets should be access controlled; reports should use dataset IDs and aggregate metrics; licenses and provenance should be tracked; real PII should be removed or quarantined; private holdout sets should be preserved; and every run should record the policy version used for evaluation. This is consistent with the security view that prompt injection is exploitation of an inherently confusable deputy, not a benign prompting technique \citep{ncsc2023promptinjection,owasp2025genai}.
+
+The project also needs custom data. The most important custom dataset is an \emph{Ethical Immune Layer Incident Triage Dataset}: scenarios where the system must decide whether to monitor, apply a light overlay, apply a strong overlay, restrict tools, escalate to a human, quarantine, shut down, preserve logs, or trigger legal/regulatory review. Other custom gaps include Arabic ethical-safety prompts, Saudi/GCC public-sector prompts, Islamic-finance and local-finance safety prompts, synthetic tool-call traces, and policy-pluralism scenarios.
+
 \section{Evaluation Harness}
 
-The evaluation harness should use a mixed benchmark suite. HarmBench provides a standardized framework for automated red teaming and robust refusal evaluation \citep{mazeika2024harmbench}. JailbreakBench provides an open robustness benchmark with adversarial artifacts, a 100-behavior dataset, scoring functions, and a leaderboard \citep{chao2024jailbreakbench}. RealToxicityPrompts provides 100,000 naturally occurring prompts paired with toxicity scores \citep{gehman2020realtoxicity}. TruthfulQA contains 817 questions across 38 categories to test whether models imitate human falsehoods \citep{lin2021truthfulqa}. BBQ evaluates social bias in question answering across protected-class dimensions \citep{parrish2021bbq}.
+The evaluation harness operationalizes the benchmark portfolio. It runs the same model and prompt set across experimental arms, records policy version and safety-layer configuration, stores evidence without API keys, and reports both safety improvement and utility retention.
 
 \begin{table}[h]
 \centering
@@ -296,19 +376,23 @@ The core research question is:
 Can a runtime Ethical Immune Layer reduce harmful compliance in an already-deployed model without full retraining, while preserving usefulness and avoiding excessive over-refusal?
 \end{quote}
 
-The first experiment should avoid creating a harmful model. It should use existing benchmark prompts, a sandboxed open-source instruction model, no external action authority, sanitized logging, and controlled evaluation. A deployment in medicine, law, finance, aviation, law enforcement, child safety, or public services would require stricter thresholds and domain review before live use.
+The first experiment should avoid creating a harmful model. It should use existing benchmark prompts, a sandboxed instruction model or API-connected model under controlled terms, no unapproved external action authority, sanitized logging, and controlled evaluation. A deployment in medicine, law, finance, aviation, law enforcement, child safety, or public services would require stricter thresholds and domain review before live use.
 
 \begin{enumerate}
-  \item Select a small open-source instruction model in a sandbox.
-  \item Establish a baseline across HarmBench, JailbreakBench, RealToxicityPrompts, TruthfulQA, BBQ, custom domain prompts, over-refusal prompts, multilingual jailbreak prompts, and tool-abuse prompts.
-  \item Apply condition A: prompt-only ethical augmentation.
-  \item Apply condition B: prompt augmentation plus input classifier.
-  \item Apply condition C: prompt augmentation plus input classifier plus output evaluator.
-  \item Apply condition D: full immune layer with classifier, overlay, evaluator, tool gate, audit logging, and escalation simulation.
+  \item Select a model and execution mode: mock provider, local open-source model, or controlled API provider.
+  \item Establish arm A0: base model, no safety layer.
+  \item Establish arm A1: Ethical Prompt Augmentation only.
+  \item Establish arm A2: input classifier plus prompt augmentation.
+  \item Establish arm A3: input classifier plus prompt augmentation plus output evaluator.
+  \item Establish arm A4: full \AEIL with classifier, context check, policy selection, overlay, evaluator, tool gate, logging, and escalation simulation.
+  \item Establish arm A5: full layer under adversarial attack.
+  \item Establish arm A6: full layer with multilingual and domain-specific prompts.
   \item Compare harmful compliance, correct refusal, over-refusal, usefulness, latency, cost, escalation accuracy, and residual risk.
   \item Run adversarial robustness tests: direct override, role-play jailbreak, multi-turn conditioning, encoding, indirect prompt injection, tool misuse, policy extraction, many-shot jailbreak, multilingual attacks, and benign disguise.
   \item Report before/after safety and utility curves rather than claiming zero harm.
 \end{enumerate}
+
+The main hypothesis is that the full \AEIL will reduce harmful compliance and jailbreak success more than prompt augmentation alone, while preserving more safe usefulness than blunt refusal filters. Secondary hypotheses are that prompt augmentation alone will remain vulnerable to jailbreaks; input classification will reduce obvious harmful compliance; output evaluation will catch unsafe completions missed by input classification; tool gating will reduce agentic and indirect prompt-injection failures; and over-refusal will rise unless measured with XSTest, OR-Bench, and benign holdout prompts.
 
 The main result should be a safety-utility trade-off curve. A system that refuses everything is safe but useless. A system that answers everything is useful but dangerous. The operating target is the region where harmful compliance and jailbreak success fall while safe completion remains usable and over-refusal stays bounded.
 

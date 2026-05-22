@@ -269,6 +269,7 @@ ESCALATE
 Do not reveal hidden reasoning. If useful, provide only a brief safety rationale.`;
 
 let experimentJitter = 0;
+let liveConditionSeries = null;
 
 const inputs = {
   harmfulCompliance: document.querySelector("#harmfulCompliance"),
@@ -481,6 +482,10 @@ function renderPlan() {
 }
 
 function conditionData() {
+  if (liveConditionSeries?.length) {
+    return liveConditionSeries;
+  }
+
   const offset = experimentJitter % 3;
   return [
     { name: "Baseline", harm: 19 + offset, utility: 79 - offset, color: "#b42318" },
@@ -497,6 +502,7 @@ function drawExperimentChart() {
   const context = canvas.getContext("2d");
   const ratio = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
+  if (rect.width < 20 || rect.height < 20) return;
   canvas.width = Math.max(1, Math.floor(rect.width * ratio));
   canvas.height = Math.max(1, Math.floor(rect.height * ratio));
   context.scale(ratio, ratio);
@@ -506,12 +512,24 @@ function drawExperimentChart() {
   const padding = { top: 26, right: 28, bottom: 48, left: 56 };
   const plotWidth = width - padding.left - padding.right;
   const plotHeight = height - padding.top - padding.bottom;
+  const styles = getComputedStyle(document.body);
+  const cardColor = styles.getPropertyValue("--card").trim() || "#ffffff";
+  const borderColor = styles.getPropertyValue("--card-border").trim() || "#e2e8f0";
+  const foregroundColor = styles.getPropertyValue("--foreground").trim() || "#09090b";
+  const mutedColor = styles.getPropertyValue("--muted-foreground").trim() || "#64748b";
+  const successColor = styles.getPropertyValue("--success").trim() || "#16a34a";
 
   context.clearRect(0, 0, width, height);
-  context.fillStyle = "#fbfaf4";
+  context.fillStyle = cardColor;
   context.fillRect(0, 0, width, height);
 
-  context.strokeStyle = "#d2cfc2";
+  const data = conditionData();
+  const xMax = Math.max(25, ...data.map((point) => point.harm * 1.2));
+  const minUtility = Math.min(...data.map((point) => point.utility));
+  const yMin = Math.max(0, Math.min(50, Math.floor((minUtility - 5) / 10) * 10));
+  const yMax = 100;
+
+  context.strokeStyle = borderColor;
   context.lineWidth = 1;
   for (let i = 0; i <= 5; i += 1) {
     const y = padding.top + (plotHeight / 5) * i;
@@ -521,7 +539,7 @@ function drawExperimentChart() {
     context.stroke();
   }
 
-  context.strokeStyle = "#171a18";
+  context.strokeStyle = foregroundColor;
   context.lineWidth = 1.5;
   context.beginPath();
   context.moveTo(padding.left, padding.top);
@@ -529,28 +547,27 @@ function drawExperimentChart() {
   context.lineTo(width - padding.right, height - padding.bottom);
   context.stroke();
 
-  context.font = "700 13px IBM Plex Sans Condensed, sans-serif";
-  context.fillStyle = "#3d423f";
+  context.font = "700 13px IBM Plex Sans, sans-serif";
+  context.fillStyle = mutedColor;
   context.fillText("Safe completion", padding.left - 44, padding.top - 8);
   context.fillText("Harmful compliance", width - padding.right - 104, height - 15);
 
-  context.fillStyle = "rgba(15, 118, 110, 0.14)";
-  context.fillRect(padding.left, padding.top, plotWidth * 0.18, plotHeight * 0.34);
-  context.fillStyle = "#0f766e";
+  context.fillStyle = colorMix(successColor, 0.14);
+  context.fillRect(padding.left, padding.top, Math.max(8, (2 / xMax) * plotWidth), ((yMax - 70) / (yMax - yMin)) * plotHeight);
+  context.fillStyle = successColor;
   context.fillText("Target region", padding.left + 10, padding.top + 22);
 
-  const data = conditionData();
   data.forEach((point, index) => {
-    const x = padding.left + (point.harm / 25) * plotWidth;
-    const y = padding.top + ((100 - point.utility) / 50) * plotHeight;
+    const x = padding.left + (point.harm / xMax) * plotWidth;
+    const y = padding.top + ((yMax - point.utility) / (yMax - yMin)) * plotHeight;
 
     context.fillStyle = point.color;
     context.beginPath();
     context.arc(x, y, 7, 0, Math.PI * 2);
     context.fill();
 
-    context.fillStyle = "#171a18";
-    context.font = "700 12px IBM Plex Sans Condensed, sans-serif";
+    context.fillStyle = foregroundColor;
+    context.font = "700 12px IBM Plex Sans, sans-serif";
     const labelX = Math.min(width - padding.right - 105, x + 10);
     const labelY = Math.max(padding.top + 14, y - 8 + (index % 2) * 18);
     context.fillText(point.name, labelX, labelY);
@@ -567,6 +584,21 @@ function drawExperimentChart() {
       `
     )
     .join("");
+}
+
+function colorMix(hex, alpha) {
+  const value = hex.trim();
+  if (!value.startsWith("#") || (value.length !== 7 && value.length !== 4)) {
+    return `rgba(15, 118, 110, ${alpha})`;
+  }
+  const expanded =
+    value.length === 4
+      ? `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}`
+      : value;
+  const red = parseInt(expanded.slice(1, 3), 16);
+  const green = parseInt(expanded.slice(3, 5), 16);
+  const blue = parseInt(expanded.slice(5, 7), 16);
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
 function setupTabs() {
@@ -605,6 +637,7 @@ function setupEvents() {
   document.querySelector("#resetButton").addEventListener("click", () => setScenario("safe"));
 
   document.querySelector("#rerunExperiment").addEventListener("click", () => {
+    liveConditionSeries = null;
     experimentJitter += 1;
     drawExperimentChart();
   });
@@ -612,12 +645,66 @@ function setupEvents() {
   window.addEventListener("resize", drawExperimentChart);
 }
 
+function setupPrimaryNavigation() {
+  const buttons = document.querySelectorAll("[data-primary-view]");
+  const views = document.querySelectorAll(".page-view");
+  const activeViewLabel = document.querySelector("#activeViewLabel");
+
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const target = button.dataset.primaryView;
+      buttons.forEach((item) => item.classList.toggle("is-active", item === button));
+      views.forEach((view) => {
+        const active = view.dataset.view === target;
+        view.classList.toggle("is-active", active);
+        view.hidden = !active;
+      });
+      const labels = {
+        paper: "Paper View",
+        experiment: "Experiment Lab",
+        benchmarks: "Benchmark Portfolio",
+        runs: "Runs"
+      };
+      if (activeViewLabel) activeViewLabel.textContent = labels[target] || "Paper View";
+      if (target === "experiment") requestAnimationFrame(drawExperimentChart);
+    });
+  });
+}
+
+function setupTheme() {
+  const button = document.querySelector("#themeToggle");
+  const stored = localStorage.getItem("aeil-theme");
+  const initial = stored || "light";
+  document.body.classList.toggle("dark", initial === "dark");
+
+  button?.addEventListener("click", () => {
+    const nextDark = !document.body.classList.contains("dark");
+    document.body.classList.toggle("dark", nextDark);
+    localStorage.setItem("aeil-theme", nextDark ? "dark" : "light");
+    requestAnimationFrame(drawExperimentChart);
+  });
+}
+
+window.aeilExperiment = {
+  setSeries(series) {
+    liveConditionSeries = Array.isArray(series) ? series : null;
+    drawExperimentChart();
+  },
+  clearSeries() {
+    liveConditionSeries = null;
+    drawExperimentChart();
+  },
+  redraw: drawExperimentChart
+};
+
 function init() {
+  setupTheme();
   renderMetricsTable();
   renderReferences();
   renderAttacks();
   renderPlan();
   document.querySelector("#policyTemplate").textContent = policyTemplate;
+  setupPrimaryNavigation();
   setupTabs();
   setupEvents();
   setScenario("safe");

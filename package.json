@@ -1,0 +1,10 @@
+{
+  "name": "ai-ethical-immune-layer",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node platform/server.mjs",
+    "check": "node --check platform/app.js && node --check platform/portfolio.js && node --check platform/runner.js && node --check platform/server.mjs"
+  }
+}

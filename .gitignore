@@ -14,3 +14,6 @@ paper/*.fdb_latexmk
 
 # Local dependency directories
 node_modules/
+
+# Local experiment artifacts
+platform/runs/*.json
