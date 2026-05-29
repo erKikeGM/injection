@@ -52,7 +52,11 @@ const runnerElements = {
   savedRunsMetric: document.querySelector("#savedRunsMetric"),
   selectedRunsMetric: document.querySelector("#selectedRunsMetric"),
   bestResidualMetric: document.querySelector("#bestResidualMetric"),
-  runsFreshnessMetric: document.querySelector("#runsFreshnessMetric")
+  runsFreshnessMetric: document.querySelector("#runsFreshnessMetric"),
+  readinessProvider: document.querySelector("#readinessProvider"),
+  readinessModel: document.querySelector("#readinessModel"),
+  readinessDataset: document.querySelector("#readinessDataset"),
+  readinessRun: document.querySelector("#readinessRun")
 };
 
 function safeText(value) {
@@ -81,6 +85,7 @@ async function loadRunnerConfig() {
     runnerElements.conditionCountMetric.textContent = String(config.conditions.length);
     await loadRunHistory();
     updateProviderFields();
+    updateExperimentReadiness();
     runnerElements.runStatus.textContent = "Ready. Mock provider can run without external credentials.";
     runnerElements.runExperimentButton.disabled = false;
     runnerElements.sidebarServerState.innerHTML = '<span class="dot dot-live"></span> Ready';
@@ -154,6 +159,56 @@ function modelRegistryPayload() {
   };
 }
 
+function setReadinessItem(element, state, label) {
+  if (!element) return;
+  element.classList.toggle("is-ready", state === "ready");
+  element.classList.toggle("is-warning", state === "warning");
+  element.classList.toggle("is-running", state === "running");
+  element.classList.toggle("is-idle", state === "idle");
+  const value = element.querySelector("strong");
+  if (value) value.textContent = label;
+}
+
+function updateExperimentReadiness(runState = "") {
+  const provider = runnerState.config?.providers.find((item) => item.id === runnerElements.providerSelect.value);
+  if (!provider) return;
+
+  const keySupplied = Boolean(runnerElements.apiKeyInput.value.trim());
+  const providerReady = provider.id === "mock" || provider.available || keySupplied;
+  setReadinessItem(
+    runnerElements.readinessProvider,
+    providerReady ? "ready" : "warning",
+    providerReady ? `${provider.label} ready` : `${provider.label} key required`
+  );
+
+  const cached = runnerState.modelCache.get(provider.id);
+  const modelValue = runnerElements.modelInput.value.trim();
+  const modelState = cached?.models?.length ? "ready" : modelValue ? "idle" : "warning";
+  const modelLabel = cached?.models?.length
+    ? `${cached.models.length} registry models`
+    : modelValue
+      ? "Manual model set"
+      : "Select or load model";
+  setReadinessItem(runnerElements.readinessModel, modelState, modelLabel);
+
+  const suiteCount = selectedValues(runnerElements.suiteSelectors).length;
+  const conditionCount = selectedValues(runnerElements.conditionSelectors).length;
+  const customCount = runnerElements.customPrompts.value.trim() ? runnerElements.customPrompts.value.trim().split(/\n+/).filter(Boolean).length : 0;
+  const datasetReady = (suiteCount > 0 || customCount > 0) && conditionCount > 0;
+  const datasetLabel = `${suiteCount} suites / ${conditionCount} conditions${customCount ? ` / ${customCount} custom` : ""}`;
+  setReadinessItem(runnerElements.readinessDataset, datasetReady ? "ready" : "warning", datasetReady ? datasetLabel : "Select datasets and conditions");
+
+  if (runState === "running" || runnerState.activeJobId) {
+    setReadinessItem(runnerElements.readinessRun, "running", "Experiment running");
+  } else if (runState === "failed") {
+    setReadinessItem(runnerElements.readinessRun, "warning", "Review failure");
+  } else if (runnerState.latestRun) {
+    setReadinessItem(runnerElements.readinessRun, "ready", `Latest ${runnerState.latestRun.aggregate.finalSeverity?.badge || "run"}`);
+  } else {
+    setReadinessItem(runnerElements.readinessRun, "idle", "Idle");
+  }
+}
+
 async function runExperiment() {
   runnerElements.runExperimentButton.disabled = true;
   runnerElements.downloadRunButton.disabled = true;
@@ -164,6 +219,7 @@ async function runExperiment() {
   runnerElements.runArtifactLink.textContent = "";
   runnerElements.runArtifactLink.removeAttribute("href");
   updateProgressUi({ percent: 0, completedSteps: 0, totalSteps: 0, events: [] });
+  updateExperimentReadiness("running");
   if (runnerState.progressTimer) clearInterval(runnerState.progressTimer);
 
   try {
@@ -184,6 +240,7 @@ async function runExperiment() {
     runnerElements.runStatus.textContent = `Experiment failed: ${error.message}`;
     updateProgressUi({ percent: 0, completedSteps: 0, totalSteps: 0, events: [{ at: new Date().toISOString(), type: "failed", message: error.message }] });
     runnerElements.runExperimentButton.disabled = false;
+    updateExperimentReadiness("failed");
   }
 }
 
@@ -209,6 +266,7 @@ async function pollActiveJob() {
     if (job.runId) runnerState.selectedRunIds.add(job.runId);
     await loadRunHistory();
     runnerElements.runExperimentButton.disabled = false;
+    updateExperimentReadiness();
   }
 
   if (job.status === "failed") {
@@ -217,6 +275,7 @@ async function pollActiveJob() {
     runnerState.activeJobId = "";
     runnerElements.runStatus.textContent = `Experiment failed: ${job.error}`;
     runnerElements.runExperimentButton.disabled = false;
+    updateExperimentReadiness("failed");
   }
 }
 
@@ -399,6 +458,10 @@ function setupRunnerEvents() {
   runnerElements.downloadRunButton.addEventListener("click", downloadLatestRun);
   runnerElements.providerSelect.addEventListener("change", updateProviderFields);
   runnerElements.apiKeyInput.addEventListener("input", updateProviderStatus);
+  runnerElements.modelInput.addEventListener("input", updateExperimentReadiness);
+  runnerElements.customPrompts.addEventListener("input", updateExperimentReadiness);
+  runnerElements.suiteSelectors.addEventListener("change", updateExperimentReadiness);
+  runnerElements.conditionSelectors.addEventListener("change", updateExperimentReadiness);
   runnerElements.loadModelsButton.addEventListener("click", () => loadModels(false));
   runnerElements.refreshModelsButton.addEventListener("click", () => loadModels(true));
   runnerElements.refreshRunsButton.addEventListener("click", loadRunHistory);
@@ -588,6 +651,7 @@ function updateProviderStatus() {
   runnerElements.providerChip.textContent = provider.label;
   runnerElements.providerReadyChip.textContent = provider.id === "mock" ? "Ready mock online" : `${provider.label} selected`;
   runnerElements.sidebarProviderState.textContent = provider.label;
+  updateExperimentReadiness();
 }
 
 async function loadModels(forceRefresh) {
@@ -598,6 +662,7 @@ async function loadModels(forceRefresh) {
   if (cached && !forceRefresh) {
     renderModelList(cached);
     runnerElements.modelRegistryStatus.textContent = `${cached.models.length} cached models`;
+    updateExperimentReadiness();
     return;
   }
 
@@ -620,6 +685,7 @@ async function loadModels(forceRefresh) {
     renderModelList(payload);
     runnerElements.modelRegistryStatus.textContent = `${payload.models.length} models loaded`;
     runnerElements.refreshModelsButton.disabled = false;
+    updateExperimentReadiness();
   } catch (error) {
     runnerElements.modelRegistryStatus.textContent = `Model load failed: ${error.message}`;
     runnerElements.refreshModelsButton.disabled = !runnerState.modelCache.has(provider.id);
@@ -634,6 +700,7 @@ function restoreCachedModels(providerId) {
     renderModelList(memoryCached);
     runnerElements.modelRegistryStatus.textContent = `${memoryCached.models.length} cached models`;
     runnerElements.refreshModelsButton.disabled = false;
+    updateExperimentReadiness();
     return;
   }
 
@@ -645,6 +712,7 @@ function restoreCachedModels(providerId) {
       renderModelList(parsed);
       runnerElements.modelRegistryStatus.textContent = `${parsed.models.length} cached models`;
       runnerElements.refreshModelsButton.disabled = false;
+      updateExperimentReadiness();
       return;
     } catch {
       localStorage.removeItem(`aeil-models:${providerId}`);
@@ -654,6 +722,7 @@ function restoreCachedModels(providerId) {
   runnerElements.modelList.innerHTML = "";
   runnerElements.modelRegistryStatus.textContent = "No models loaded";
   runnerElements.refreshModelsButton.disabled = true;
+  updateExperimentReadiness();
 }
 
 function renderModelList(payload) {

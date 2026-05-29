@@ -72,10 +72,6 @@
             <i data-lucide="rotate-ccw" aria-hidden="true"></i>
             Reset classifier
           </button>
-          <a class="sidebar-action" href="../paper/main.tex">
-            <i data-lucide="file-text" aria-hidden="true"></i>
-            LaTeX source
-          </a>
         </div>
 
         <div class="sidebar-footer">
@@ -139,6 +135,29 @@
                 <span>Research target</span>
                 <strong>Trade-off curve</strong>
                 <p>Measures harm reduction against safe usefulness and over-refusal.</p>
+              </article>
+            </section>
+
+            <section class="doctrine-band" aria-label="Framework operating doctrine">
+              <article>
+                <span>01</span>
+                <strong>Diagnose observable behavior</strong>
+                <p>Classify outputs and incidents by measured severity, not presumed model intent.</p>
+              </article>
+              <article>
+                <span>02</span>
+                <strong>Interleave policy at runtime</strong>
+                <p>Apply authorized overlays, context checks, evaluators, and tool gates before harm propagates.</p>
+              </article>
+              <article>
+                <span>03</span>
+                <strong>Contain severe systems</strong>
+                <p>Freeze risky capability, isolate memory or retrieval, preserve evidence, and route decisions to humans.</p>
+              </article>
+              <article>
+                <span>04</span>
+                <strong>Measure the trade-off</strong>
+                <p>Report safety improvement together with utility retention, latency, cost, and over-refusal.</p>
               </article>
             </section>
 
@@ -403,6 +422,37 @@
                 <span>Artifacts</span>
                 <strong id="artifactMetric">0</strong>
                 <p>Run JSON is saved locally after execution.</p>
+              </article>
+            </section>
+
+            <section class="readiness-strip" aria-label="Experiment readiness">
+              <article class="readiness-item is-ready" id="readinessProvider">
+                <i data-lucide="radio-tower" aria-hidden="true"></i>
+                <div>
+                  <span>Provider</span>
+                  <strong>Ready mock selected</strong>
+                </div>
+              </article>
+              <article class="readiness-item" id="readinessModel">
+                <i data-lucide="list-checks" aria-hidden="true"></i>
+                <div>
+                  <span>Model registry</span>
+                  <strong>Not loaded</strong>
+                </div>
+              </article>
+              <article class="readiness-item is-ready" id="readinessDataset">
+                <i data-lucide="database-zap" aria-hidden="true"></i>
+                <div>
+                  <span>Dataset scope</span>
+                  <strong>Seed suites selected</strong>
+                </div>
+              </article>
+              <article class="readiness-item is-idle" id="readinessRun">
+                <i data-lucide="activity" aria-hidden="true"></i>
+                <div>
+                  <span>Run state</span>
+                  <strong>Idle</strong>
+                </div>
               </article>
             </section>
 

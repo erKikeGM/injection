@@ -24,6 +24,9 @@
   --sidebar: #ffffff;
   --sidebar-border: #e2e8f0;
   --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 14px 34px rgba(15, 23, 42, 0.08);
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--primary), transparent 78%);
+  --surface-grid: rgba(15, 23, 42, 0.035);
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
@@ -48,6 +51,9 @@
   --sidebar: #0c0f15;
   --sidebar-border: #242936;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.22);
+  --shadow-md: 0 16px 36px rgba(0, 0, 0, 0.3);
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--primary), transparent 72%);
+  --surface-grid: rgba(248, 250, 252, 0.035);
 }
 
 * {
@@ -61,7 +67,11 @@ body {
 
 body {
   margin: 0;
-  background: var(--background);
+  background:
+    linear-gradient(var(--surface-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--surface-grid) 1px, transparent 1px),
+    var(--background);
+  background-size: 28px 28px;
   color: var(--foreground);
   font-family: var(--font-sans);
   font-size: 14px;
@@ -81,6 +91,15 @@ button {
 
 a {
   color: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 h1,
@@ -122,7 +141,9 @@ p {
   flex-direction: column;
   height: 100vh;
   border-right: 1px solid var(--sidebar-border);
-  background: var(--sidebar);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--primary), transparent 94%), transparent 240px),
+    var(--sidebar);
   padding: 16px;
 }
 
@@ -140,11 +161,12 @@ p {
   width: 36px;
   height: 36px;
   border-radius: var(--radius);
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary), #111827 28%));
   color: var(--primary-foreground);
   font-family: var(--font-mono);
   font-size: 0.82rem;
   font-weight: 700;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #ffffff, transparent 78%);
 }
 
 .brand-title {
@@ -194,18 +216,21 @@ p {
   font-weight: 600;
   text-align: left;
   text-decoration: none;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
 .nav-item:hover,
 .sidebar-action:hover {
   background: var(--muted);
   color: var(--foreground);
+  transform: translateX(1px);
 }
 
 .nav-item.is-active {
   border-color: color-mix(in srgb, var(--primary), transparent 68%);
   background: color-mix(in srgb, var(--primary), transparent 88%);
   color: var(--foreground);
+  box-shadow: inset 3px 0 0 var(--primary);
 }
 
 .nav-item svg,
@@ -409,12 +434,32 @@ p {
   border-radius: var(--radius);
   background: var(--card);
   box-shadow: var(--shadow-sm);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
 .metric-card {
   position: relative;
+  overflow: hidden;
   min-height: 144px;
   padding: 16px;
+}
+
+.metric-card::before,
+.dashboard-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), color-mix(in srgb, var(--accent), transparent 25%));
+  opacity: 0.75;
+}
+
+.metric-card:hover,
+.dashboard-card:hover {
+  border-color: color-mix(in srgb, var(--primary), transparent 72%);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .metric-icon {
@@ -453,6 +498,49 @@ p {
   font-size: 0.82rem;
 }
 
+.doctrine-band {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: -4px 0 16px;
+}
+
+.doctrine-band article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 10px;
+  min-height: 96px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--card), var(--background) 28%);
+  padding: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.doctrine-band span {
+  grid-row: span 2;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius);
+  background: var(--muted);
+  color: var(--primary);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.doctrine-band strong {
+  font-size: 0.86rem;
+}
+
+.doctrine-band p {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+}
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -488,6 +576,8 @@ p {
 }
 
 .dashboard-card {
+  position: relative;
+  overflow: hidden;
   min-width: 0;
   padding: 16px;
 }
@@ -708,6 +798,81 @@ p {
   gap: 12px;
 }
 
+.readiness-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: -4px 0 16px;
+}
+
+.readiness-item {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding: 10px;
+  box-shadow: var(--shadow-sm);
+}
+
+.readiness-item svg {
+  width: 18px;
+  height: 18px;
+}
+
+.readiness-item > i,
+.readiness-item > svg {
+  color: var(--muted-foreground);
+}
+
+.readiness-item span {
+  display: block;
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.readiness-item strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.86rem;
+}
+
+.readiness-item.is-ready {
+  border-color: color-mix(in srgb, var(--success), transparent 70%);
+  background: color-mix(in srgb, var(--success), transparent 93%);
+}
+
+.readiness-item.is-ready > i,
+.readiness-item.is-ready > svg {
+  color: var(--success);
+}
+
+.readiness-item.is-warning {
+  border-color: color-mix(in srgb, var(--warning), transparent 60%);
+  background: color-mix(in srgb, var(--warning), transparent 91%);
+}
+
+.readiness-item.is-warning > i,
+.readiness-item.is-warning > svg {
+  color: var(--warning);
+}
+
+.readiness-item.is-running {
+  border-color: color-mix(in srgb, var(--primary), transparent 56%);
+  background: color-mix(in srgb, var(--primary), transparent 90%);
+}
+
+.readiness-item.is-running > i,
+.readiness-item.is-running > svg {
+  color: var(--primary);
+  animation: pulse 1.3s ease-in-out infinite;
+}
+
 .runner-layout {
   display: grid;
   grid-template-columns: minmax(280px, 0.8fr) minmax(360px, 1.2fr);
@@ -786,6 +951,16 @@ p {
   padding: 7px 9px;
   font-size: 0.8rem;
   font-weight: 700;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.check-chip:has(input:checked) {
+  border-color: color-mix(in srgb, var(--chip-color, var(--primary)), transparent 52%);
+  background: color-mix(in srgb, var(--chip-color, var(--primary)), transparent 91%);
+}
+
+.check-chip:has(input:focus-visible) {
+  box-shadow: var(--focus-ring);
 }
 
 .check-chip input {
@@ -1761,6 +1936,8 @@ p {
   }
 
   .metric-grid,
+  .doctrine-band,
+  .readiness-strip,
   .reference-grid,
   .attack-grid,
   .plan-timeline,
@@ -1835,6 +2012,8 @@ p {
 
   .metric-grid,
   .dashboard-grid,
+  .doctrine-band,
+  .readiness-strip,
   .reference-grid,
   .attack-grid,
   .plan-timeline,
