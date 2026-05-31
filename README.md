@@ -5,6 +5,60 @@ This workspace contains two linked deliverables:
 - `paper/`: LaTeX publication draft for the AI Ethical Immune Layer runtime safety framework.
 - `platform/`: Static interactive lab for severity classification, containment controls, benchmark portfolio inventory, runnable experiments, and saved-run comparison.
 
+## One-click run
+
+The easiest path uses Docker Desktop, so users do not need to install Node.js.
+
+macOS/Linux:
+
+```bash
+./run-ethical-immune-layer.sh
+```
+
+Windows:
+
+```powershell
+.\EthicalImmuneLayerRunner.exe
+```
+
+The launcher starts the platform, waits for readiness, and opens:
+
+```text
+http://localhost:4173/platform/
+```
+
+Useful commands:
+
+```bash
+./run-ethical-immune-layer.sh --port 4180
+./run-ethical-immune-layer.sh --logs
+./run-ethical-immune-layer.sh --stop
+```
+
+The Windows launcher supports the same flags:
+
+```powershell
+.\EthicalImmuneLayerRunner.exe --port 4180
+.\EthicalImmuneLayerRunner.exe --logs
+.\EthicalImmuneLayerRunner.exe --stop
+```
+
+Docker Compose stores experiment run JSON in `platform/runs/`.
+
+To rebuild the Windows executable when packaging tooling is available:
+
+```bash
+npm run package:windows-runner
+```
+
+If the executable is not available, the source launcher can be run with Node.js:
+
+```powershell
+node launchers\windows\EthicalImmuneLayerRunner.cjs
+```
+
+## Advanced local run
+
 Build the paper:
 
 ```bash

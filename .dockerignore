@@ -1,0 +1,15 @@
+.git
+.DS_Store
+node_modules
+npm-debug.log*
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.fdb_latexmk
+paper/*.fls
+paper/*.log
+paper/*.out
+paper/*.pdf
+paper/*.toc
+platform/runs
+*.exe
