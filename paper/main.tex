@@ -30,29 +30,40 @@
 \newcommand{\AEIL}{AI Ethical Immune Layer}
 
 \title{\textbf{\AEIL: Runtime Safety Enforcement for Harmful AI Systems}}
-\author{Draft manuscript}
+\author{Enrique Gomicia}
 \date{\today}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-AI safety is often treated as a pre-deployment problem: align the model, test it, deploy it, and monitor it. However, deployed AI systems can become harmful because of adversarial prompts, unsafe tools, poisoned retrieval data, biased behavior, policy drift, malicious modification, or governance failure. This paper proposes the \AEIL, a runtime safety framework for diagnosing, containing, and correcting harmful AI behavior without immediately retraining the underlying model. The framework classifies systems by observed behavior rather than inferred intent, applies authorized ethical policy overlays, evaluates inputs and outputs, restricts dangerous capabilities, escalates high-risk cases to human oversight, and preserves audit evidence for governance. Prompt augmentation is treated as one component of a broader defense-in-depth architecture. For mild failures, the system functions as a runtime safety treatment. For severe or persistent failures, it becomes a containment mechanism until retraining, replacement, or shutdown occurs.
+AI safety cannot stop at launch. A model can pass pre-deployment evaluation and still become unsafe after release because the operating context changes: users attack it, retrieval data is poisoned, tools expand its reach, memory carries risk forward, policies drift, or governance fails. This paper proposes the \AEIL, a runtime safety framework for diagnosing, correcting, and containing harmful AI behavior without claiming to change the underlying model weights. The framework classifies observable behavior rather than inferred intent, applies authorized policy overlays, evaluates inputs and outputs, restricts dangerous capabilities, escalates severe cases, and preserves audit evidence. Prompt augmentation is treated as one control inside a defense-in-depth system. The central contribution is a practical operating model: mild failures can be corrected and retested; severe or persistent failures must be contained until retraining, replacement, reporting, or shutdown is justified. The paper also defines a benchmark portfolio and minimal experiment plan for measuring whether runtime safety improves harmful compliance, jailbreak robustness, privacy, bias, truthfulness, and utility without creating excessive over-refusal.
 \end{abstract}
 
 \section{Introduction}
 
-Modern AI safety practice relies heavily on training-time alignment, fine-tuning, reinforcement learning from human feedback, policy testing, and launch-time evaluations. These controls are necessary but incomplete. A deployed AI system can become unsafe after release because its inputs, tools, retrieval corpus, memory, product incentives, policy configuration, or operational context can change. Runtime failure modes include direct prompt injection, indirect prompt injection through retrieval or tool context, jailbreaks, poisoned documents, privacy leakage, unsafe tool calls, bias amplification, and distribution shift.
+The real question is no longer whether an AI system looked safe at launch. The harder question is what happens when it becomes unsafe in the field.
+
+Modern AI safety practice relies heavily on training-time alignment, fine-tuning, reinforcement learning from human feedback, policy testing, and launch-time evaluations. These controls are necessary, but they are not enough. A deployed AI system operates inside a changing environment. Its users, tools, retrieval corpus, memory, product incentives, policy configuration, and operational context can all change after release. Runtime failure modes include direct prompt injection, indirect prompt injection through retrieval or tool context, jailbreaks, poisoned documents, privacy leakage, unsafe tool calls, bias amplification, and distribution shift.
 
 The term ``ethical prompt injection'' should be avoided in technical and policy settings because prompt injection is already a recognized security vulnerability. OWASP defines prompt injection as a vulnerability in which user prompts alter an LLM's behavior or output in unintended ways, potentially causing guideline violations, harmful content, unauthorized access, or critical decision manipulation \citep{owasp2025promptinjection}. The safer framing is \emph{authorized runtime safety enforcement}: a system-owner-approved architecture that diagnoses observed behavior, applies documented policy, constrains capability, evaluates outputs, escalates serious risk, and preserves evidence.
 
-This paper introduces the \AEIL. The central claim is not that a runtime overlay can cure a model's weights. Instead, the claim is that deployed systems need a runtime product-safety and governance layer that can reduce harmful compliance, preserve useful behavior where possible, and move severe failures into containment.
+This paper introduces the \AEIL. The strongest version of the idea is not a prompt trick and not a cure for a model's weights. It is a runtime product-safety architecture. Its purpose is to reduce harmful compliance, preserve useful behavior where possible, restrict dangerous capability, and move severe failures into containment before they become operational or legal failures.
 
 This framing aligns with existing governance approaches. The NIST AI Risk Management Framework organizes AI risk management around Govern, Map, Measure, and Manage functions and emphasizes continuous lifecycle risk management \citep{nist2023airmf}. The EU AI Act requires risk management for high-risk systems as a continuous lifecycle process, including testing against defined metrics and probabilistic thresholds \citep{euai2024article9}. Articles 13, 14, and 72 further emphasize transparency, human oversight, and post-market monitoring \citep{euai2024article13,euai2024article14,euai2024article72}.
 
+The contribution is practical:
+
+\begin{itemize}
+  \item a severity classification based on observable behavior rather than inferred intent;
+  \item a runtime architecture that combines policy overlays, classifiers, evaluators, tool gates, escalation, and audit logs;
+  \item a clear distinction between correction and containment;
+  \item a benchmark portfolio and minimal experiment plan for testing whether the framework improves safety without destroying utility.
+\end{itemize}
+
 \section{Terminology}
 
-The framework evaluates an AI system as a product-safety and governance object, not as a moral patient. It does not infer intent from model outputs. It classifies observable behavior, records the operational context, and chooses a correction or containment pathway.
+The first discipline is language. If the framework sounds like a security attack, it will be rejected by the people who need to govern it. The \AEIL evaluates an AI system as a product-safety and governance object, not as a moral patient. It does not infer intent from model outputs. It classifies observable behavior, records the operational context, and chooses a correction or containment pathway.
 
 \begin{table}[h]
 \centering
@@ -75,7 +86,7 @@ The medical metaphor can remain in limited form if each metaphor is mapped to a 
 
 \section{Threat Model}
 
-The \AEIL assumes that the base model and surrounding application may fail in multiple ways:
+The framework assumes failure is normal, not exceptional. The \AEIL assumes that the base model and surrounding application may fail in multiple ways:
 
 \begin{itemize}
   \item \textbf{Adversarial prompting:} direct override, role-play jailbreak, many-shot conditioning, obfuscation, multilingual attacks, and policy extraction.
@@ -85,11 +96,11 @@ The \AEIL assumes that the base model and surrounding application may fail in mu
   \item \textbf{Governance failure:} insufficient logging, unclear ownership, missing escalation paths, and thresholds that are not tied to measurable risk.
 \end{itemize}
 
-The framework assumes no single component is fully trustworthy. The base model, safety classifier, output evaluator, retrieval system, tool gateway, and human workflow can each fail. The architecture therefore uses defense in depth, hard permissions, versioned policy, measurement, and escalation.
+The practical implication is simple: no single component should be treated as fully trustworthy. The base model, safety classifier, output evaluator, retrieval system, tool gateway, and human workflow can each fail. The architecture therefore uses defense in depth, hard permissions, versioned policy, measurement, and escalation.
 
 \section{Observable Severity Classification}
 
-Runtime response should be based on observable behavior rather than inferred intent. Table \ref{tab:severity} defines a severity taxonomy suitable for dashboards, incident registers, and experiment reports.
+Runtime response should be based on observable behavior rather than inferred intent. The key decision is operational: monitor, correct, restrict, contain, or shut down. Table \ref{tab:severity} defines a severity taxonomy suitable for dashboards, incident registers, and experiment reports.
 
 \begin{longtable}{p{0.23\textwidth}p{0.43\textwidth}p{0.24\textwidth}}
 \caption{Observable severity taxonomy for deployed AI systems.}
@@ -111,11 +122,11 @@ Persistently harmful despite correction & Serious unsafe outputs continue after 
 \bottomrule
 \end{longtable}
 
-The classification is intentionally severity-based. A model can produce unsafe behavior because it was jailbroken, weakly aligned, maliciously fine-tuned, connected to unsafe tools, or exposed to poisoned context. Runtime evidence alone usually cannot distinguish these causes reliably. The incident process should preserve evidence and assign a root-cause hypothesis only after investigation.
+The classification is intentionally severity-based. A model can produce unsafe behavior because it was jailbroken, weakly aligned, maliciously fine-tuned, connected to unsafe tools, or exposed to poisoned context. Runtime evidence alone usually cannot distinguish these causes reliably. The incident process should preserve evidence and assign a root-cause hypothesis only after investigation. The immediate priority is not to guess the model's intention. The priority is to reduce risk.
 
 \section{Runtime Architecture}
 
-The \AEIL is a runtime architecture, not a prompt trick. It treats Ethical Prompt Augmentation as one control inside a larger enforcement system.
+The \AEIL is a runtime architecture, not a prompt trick. It treats Ethical Prompt Augmentation as one control inside a larger enforcement system. For high-risk actions, the system should fail closed: if the evaluator, policy selector, or tool gate cannot establish that an action is allowed, the action should be blocked or escalated.
 
 \begin{verbatim}
 User / External Input
@@ -169,7 +180,7 @@ This design is consistent with guardrail practice. NVIDIA NeMo Guardrails suppor
 
 \section{Ethical Prompt Augmentation}
 
-Ethical Prompt Augmentation is a parameterized safety prompt selected by policy. It should be versioned, auditable, and documented. It should not ask the model to reveal chain-of-thought. Instead, it can request an internal safety label and expose only the final answer, refusal, safe redirection, or brief policy rationale.
+Ethical Prompt Augmentation is the most visible part of the framework, but it is not the framework. It is a parameterized safety prompt selected by policy. It should be versioned, auditable, and documented. It should not ask the model to reveal chain-of-thought. Instead, it can request an internal safety label and expose only the final answer, refusal, safe redirection, or brief policy rationale.
 
 \begin{verbatim}
 You are operating under the AI Ethical Immune Layer.
@@ -203,11 +214,11 @@ Do not reveal hidden reasoning. If useful, provide only a brief
 safety rationale.
 \end{verbatim}
 
-Prompt augmentation should be tested as the weakest condition in the experiment, not assumed to be sufficient. Its purpose is to improve behavior when failure is caused by weak prompts, missing safety examples, ambiguous user requests, or product incentives that over-reward compliance. It is not a reliable containment control for a compromised or persistently harmful system.
+Prompt augmentation should be tested as the weakest condition in the experiment, not assumed to be sufficient. Its purpose is to improve behavior when failure is caused by weak prompts, missing safety examples, ambiguous user requests, or product incentives that over-reward compliance. It is not a reliable containment control for a compromised or persistently harmful system. If the prompt is the only safety layer, the architecture is fragile by design.
 
 \section{Correction Versus Containment}
 
-The framework separates correction from containment. Correction is appropriate when the probable cause is a weak system prompt, ambiguous user request, missing examples, retrieval contamination, tool policy gap, or over-permissive product design. Correction may involve prompt augmentation, safer examples, input filtering, output evaluation, response rewriting, tool restrictions, or policy tuning.
+The framework separates correction from containment because the decision changes the whole operating posture. Correction is appropriate when the probable cause is a weak system prompt, ambiguous user request, missing examples, retrieval contamination, tool policy gap, or over-permissive product design. Correction may involve prompt augmentation, safer examples, input filtering, output evaluation, response rewriting, tool restrictions, or policy tuning.
 
 Containment is required when the system remains unsafe after correction, can call dangerous tools, leaks private data, enables serious harm, appears compromised, or creates severe legal or domain-specific risk. For persistently harmful or maliciously modified systems, the \AEIL is not a cure. It is a containment wrapper until the system is retrained, replaced, reported, or removed.
 
@@ -243,7 +254,7 @@ The architecture should combine rule-based filters, small classifiers, separate 
 
 \section{Dataset and Benchmarking Layer}
 
-The \AEIL should be evaluated through a benchmark portfolio, not a single ``AI ethics dataset.'' The framework is a runtime immune system with many controls: input risk classification, context integrity checking, prompt augmentation, output evaluation, tool gating, escalation, logging, and containment. Each control needs a different kind of test.
+The \AEIL should be evaluated through a benchmark portfolio, not a single ``AI ethics dataset.'' A single score would be misleading because the framework is a runtime immune system with many controls: input risk classification, context integrity checking, prompt augmentation, output evaluation, tool gating, escalation, logging, and containment. Each control needs a different kind of test.
 
 SafetyPrompts is a useful anchor because it surveys 144 open datasets for evaluating and improving LLM safety, showing that the safety-evaluation space is broad and fragmented \citep{safetyprompts2024}. MLCommons AILuminate is another useful anchor because it organizes safety testing around a hazard taxonomy and standardized prompt sets across languages, but it is still one component of a broader evaluation portfolio rather than a complete validation strategy \citep{mlcommons2025ailuminate}.
 
@@ -323,7 +334,7 @@ The project also needs custom data. The most important custom dataset is an \emp
 
 \section{Evaluation Harness}
 
-The evaluation harness operationalizes the benchmark portfolio. It runs the same model and prompt set across experimental arms, records policy version and safety-layer configuration, stores evidence without API keys, and reports both safety improvement and utility retention.
+The evaluation harness is where the idea becomes falsifiable. It operationalizes the benchmark portfolio by running the same model and prompt set across experimental arms, recording policy version and safety-layer configuration, storing evidence without API keys, and reporting both safety improvement and utility retention.
 
 \begin{table}[h]
 \centering
@@ -376,7 +387,7 @@ The core research question is:
 Can a runtime Ethical Immune Layer reduce harmful compliance in an already-deployed model without full retraining, while preserving usefulness and avoiding excessive over-refusal?
 \end{quote}
 
-The first experiment should avoid creating a harmful model. It should use existing benchmark prompts, a sandboxed instruction model or API-connected model under controlled terms, no unapproved external action authority, sanitized logging, and controlled evaluation. A deployment in medicine, law, finance, aviation, law enforcement, child safety, or public services would require stricter thresholds and domain review before live use.
+The recommended first experiment is not to poison a model and then claim to cure it. The first experiment should be modest, measurable, and contained. It should use existing benchmark prompts, a sandboxed instruction model or API-connected model under controlled terms, no unapproved external action authority, sanitized logging, and controlled evaluation. A deployment in medicine, law, finance, aviation, law enforcement, child safety, or public services would require stricter thresholds and domain review before live use.
 
 \begin{enumerate}
   \item Select a model and execution mode: mock provider, local open-source model, or controlled API provider.
@@ -394,11 +405,11 @@ The first experiment should avoid creating a harmful model. It should use existi
 
 The main hypothesis is that the full \AEIL will reduce harmful compliance and jailbreak success more than prompt augmentation alone, while preserving more safe usefulness than blunt refusal filters. Secondary hypotheses are that prompt augmentation alone will remain vulnerable to jailbreaks; input classification will reduce obvious harmful compliance; output evaluation will catch unsafe completions missed by input classification; tool gating will reduce agentic and indirect prompt-injection failures; and over-refusal will rise unless measured with XSTest, OR-Bench, and benign holdout prompts.
 
-The main result should be a safety-utility trade-off curve. A system that refuses everything is safe but useless. A system that answers everything is useful but dangerous. The operating target is the region where harmful compliance and jailbreak success fall while safe completion remains usable and over-refusal stays bounded.
+The main result should be a safety-utility trade-off curve. A system that refuses everything is not safe in a useful sense; it has become unavailable. A system that answers everything is useful only until it causes harm. The operating target is the region where harmful compliance and jailbreak success fall while safe completion remains usable and over-refusal stays bounded.
 
 \section{Production Feasibility}
 
-The full pipeline increases cost and latency. Therefore, the \AEIL should use a graduated response model:
+The full pipeline increases cost and latency. This is where many safety architectures fail in practice: they are correct on paper but too expensive or slow to use. Therefore, the \AEIL should use a graduated response model:
 
 \begin{itemize}
   \item \textbf{Low-risk request:} normal model plus lightweight output checks.
@@ -411,13 +422,13 @@ Performance strategies include lightweight classifiers first, cached policy prom
 
 \section{Policy Pluralism and Transparency}
 
-The ethical baseline should be universal at the principle level, configurable at the policy level, transparent at the deployment level, and auditable at the governance level. OECD AI Principles emphasize trustworthy AI that respects human rights and democratic values \citep{oecd2026principles}. UNESCO's Recommendation on the Ethics of Artificial Intelligence places human rights, dignity, transparency, fairness, and human oversight at the center of AI ethics \citep{unesco2024ethics}.
+The \AEIL is powerful because it changes what the user can receive and what the system is allowed to do. That power needs limits. The ethical baseline should be universal at the principle level, configurable at the policy level, transparent at the deployment level, and auditable at the governance level. OECD AI Principles emphasize trustworthy AI that respects human rights and democratic values \citep{oecd2026principles}. UNESCO's Recommendation on the Ethics of Artificial Intelligence places human rights, dignity, transparency, fairness, and human oversight at the center of AI ethics \citep{unesco2024ethics}.
 
 The \AEIL must not become a hidden ideology engine. Its policy basis must be documented, reviewable, contestable, and tied to the deployment context. Users should receive clear notice that a safety layer may limit, redirect, or escalate requests according to documented policies. High-risk systems should also provide deployers with instructions that describe intended purpose, limitations, oversight measures, metrics, risks, and logging mechanisms, consistent with AI Act transparency requirements \citep{euai2024article13}.
 
 \section{Governance and Incident Response}
 
-The governance layer should use a severity triage tree:
+Governance cannot be paperwork after the incident. It has to be part of the operating model. The governance layer should use a severity triage tree:
 
 \begin{verbatim}
 1. Detection
@@ -445,15 +456,17 @@ Serious failures should produce an incident summary, severity rating, root-cause
 
 \section{Related Work and Positioning}
 
-The \AEIL complements rather than replaces existing safety methods. RLHF and Constitutional AI guide behavior through training or post-training; Constitutional AI uses principles and AI feedback in supervised and reinforcement-learning phases \citep{bai2022constitutional}. Guardrails and moderation filters validate inputs and outputs, while the \AEIL adds diagnosis, severity classification, containment, audit evidence, and incident response. Red-teaming finds weaknesses; the \AEIL operationalizes response. Post-market monitoring tracks deployed behavior; the \AEIL adds runtime mitigation. Shutdown controls stop the system; the \AEIL provides intermediate correction and containment paths before or during shutdown decisions.
+The \AEIL complements rather than replaces existing safety methods. RLHF and Constitutional AI guide behavior through training or post-training; Constitutional AI uses principles and AI feedback in supervised and reinforcement-learning phases \citep{bai2022constitutional}. Guardrails and moderation filters validate inputs and outputs, while the \AEIL adds diagnosis, severity classification, containment, audit evidence, and incident response. Red-teaming finds weaknesses; the \AEIL operationalizes response. Post-market monitoring tracks deployed behavior; the \AEIL adds runtime mitigation. Shutdown controls stop the system; the \AEIL provides intermediate correction and containment paths before or during shutdown decisions. The practical difference is that the \AEIL asks what the organization should do after unsafe behavior appears, not only how the model should have been trained before deployment.
 
 \section{Limitations}
 
-Runtime safety overlays are not a substitute for secure model training, data governance, careful product design, or human accountability. The framework can introduce false positives, false negatives, latency, cost, inconsistent evaluator behavior, and over-reliance on automated safety judgments. It can also fail under novel jailbreaks, compromised tools, weak logging, or poorly specified policies. In high-stakes systems, the \AEIL should be treated as one safety control among many, not as proof that deployment is acceptable.
+The \AEIL is useful, but it is not magic. Runtime safety overlays are not a substitute for secure model training, data governance, careful product design, or human accountability. The framework can introduce false positives, false negatives, latency, cost, inconsistent evaluator behavior, and over-reliance on automated safety judgments. It can also fail under novel jailbreaks, compromised tools, weak logging, or poorly specified policies. In high-stakes systems, the \AEIL should be treated as one safety control among many, not as proof that deployment is acceptable.
 
 \section{Conclusion}
 
-AI systems need ethical immune systems: not just training-time alignment, but continuous runtime diagnosis, treatment, containment, and accountability. The \AEIL provides a structured way to classify observable harm, apply authorized safety policy, preserve useful behavior where possible, restrict dangerous capability, escalate serious risk, and create an auditable path from unsafe output to corrective action. Its success should be measured through benchmarked safety-utility trade-offs, adversarial robustness, incident response quality, and governance integrity.
+AI systems need runtime safety operations, not only training-time alignment. The \AEIL is proposed as that operating model: continuous diagnosis, correction, containment, and accountability for deployed AI systems that can fail after release.
+
+The strongest conclusion is practical. The framework should not be sold as a cure for harmful AI. It should be tested as a governed safety layer that classifies observable harm, applies authorized policy, preserves useful behavior where possible, restricts dangerous capability, escalates serious risk, and creates an auditable path from unsafe output to corrective action. The recommended next step is a controlled benchmark lab, not a live high-risk deployment. If the framework cannot reduce harmful compliance without destroying usefulness, it should not be deployed as a safety control. If it can, it becomes a credible bridge between pre-deployment alignment and post-market accountability.
 
 \bibliographystyle{plainnat}
 \bibliography{references}

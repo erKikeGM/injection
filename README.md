@@ -238,11 +238,35 @@ paper/main.tex
 paper/references.bib
 ```
 
-Build it with a local LaTeX installation:
+Build the PDF from the repository root:
+
+```bash
+npm run paper
+```
+
+This runs `make -C paper`. The Makefile uses a local `latexmk` installation when available and falls back to Docker when LaTeX is not installed. The Docker path uses the official multi-architecture TeX Live image:
+
+```bash
+make -C paper docker
+```
+
+The first Docker build may take time because it downloads the TeX Live image. After that, builds are cached. The generated PDF is:
+
+```text
+paper/main.pdf
+```
+
+For local-only LaTeX builds:
 
 ```bash
 cd paper
-make
+make local
+```
+
+Clean auxiliary LaTeX files while keeping the PDF:
+
+```bash
+npm run paper:clean
 ```
 
 The paper argues for reframing the original idea away from "ethical prompt injection" and toward authorized runtime safety enforcement, with explicit separation between correction and containment.
